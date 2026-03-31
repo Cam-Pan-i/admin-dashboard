@@ -299,10 +299,11 @@ export const ShopPage = () => {
 
                   <button
                     onClick={() => openCheckout(product)}
-                    className="w-full flex items-center justify-center gap-2 py-3 rounded-xl bg-white text-black font-bold text-sm hover:bg-white/90 transition-all active:scale-[0.98] shadow-[0_4px_16px_rgba(255,255,255,0.1)]"
+                    disabled={!hasStock}
+                    className="w-full flex items-center justify-center gap-2 py-3 rounded-xl bg-white text-black font-bold text-sm hover:bg-white/90 transition-all active:scale-[0.98] shadow-[0_4px_16px_rgba(255,255,255,0.1)] disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:bg-white"
                   >
                     <Zap size={14} />
-                    Instant Buy
+                    {hasStock ? 'Instant Buy' : 'Unavailable'}
                   </button>
                 </motion.div>
               );
