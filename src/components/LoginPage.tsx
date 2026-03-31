@@ -17,17 +17,11 @@ export const LoginPage = () => {
     setIsLoading(true);
     setError(null);
 
-    // MOCK LOGIN FOR TESTING - Priority check
-    const mockAccounts: Record<string, string> = {
-      'owner@example.com': 'owner',
-      'admin@example.com': 'admin',
-      'mod@example.com': 'mod'
-    };
-
     const normalizedEmail = email.toLowerCase().trim();
-    if (mockAccounts[normalizedEmail] && mockAccounts[normalizedEmail] === password) {
+
+    const tryMockLogin = () => {
       const account = getAccountByEmail(normalizedEmail);
-      if (account) {
+      if (account?.testPassword && account.testPassword === password) {
         const mockUser: User = {
           id: 'mock-id-' + account.role,
           email: account.email,
@@ -36,16 +30,22 @@ export const LoginPage = () => {
           aud: 'authenticated',
           created_at: new Date().toISOString()
         } as User;
-        
+
         setUser(mockUser);
         setRole(account.role as any);
+        return true;
+      }
+
+      return false;
+    };
+
+    // In mock mode (no Supabase), use local test accounts only.
+    if (!isSupabaseConfigured) {
+      if (tryMockLogin()) {
         setIsLoading(false);
         return;
       }
-    }
 
-    // If not a mock account and Supabase is not configured, show error
-    if (!isSupabaseConfigured) {
       setError('Invalid mock credentials. Use owner@example.com / owner, etc.');
       setIsLoading(false);
       return;
@@ -60,6 +60,7 @@ export const LoginPage = () => {
       if (loginError) throw loginError;
     } catch (err: any) {
       console.error('Login Error:', err);
+
       if (err.message?.includes('Failed to fetch')) {
         setError('Network error: Unable to connect to authentication service. Please check your internet connection or Supabase configuration.');
       } else {
