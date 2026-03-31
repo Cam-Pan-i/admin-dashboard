@@ -26,7 +26,7 @@ const queryClient = new QueryClient();
 
 export default function App() {
   const [activeTab, setActiveTab] = useState('dashboard');
-  const { user, setUser, setRole, isLoading } = useAuthStore();
+  const { user, setUser, setRole, isLoading, finishLoading } = useAuthStore();
 
   useEffect(() => {
     const updateRole = (email: string | undefined) => {
@@ -56,13 +56,10 @@ export default function App() {
 
       return () => subscription.unsubscribe();
     } else {
-      // If not configured, we rely on the persisted state in useAuthStore
-      // We just need to ensure isLoading becomes false if it's still true
-      if (isLoading && !user) {
-        setUser(null);
-      }
+      // In mock mode, we only need to stop the initial loading state.
+      finishLoading();
     }
-  }, [setUser, setRole, user, isLoading]);
+  }, [setUser, setRole, finishLoading]);
 
   if (isLoading) {
     return (
