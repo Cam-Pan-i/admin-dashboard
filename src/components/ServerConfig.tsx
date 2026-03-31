@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { 
   Settings, 
   Bot, 
@@ -11,13 +11,63 @@ import {
   UserCheck,
   Lock,
   Globe,
-  MessageSquare
+  MessageSquare,
+  Users,
+  Hash,
+  AlertCircle,
+  ExternalLink
 } from 'lucide-react';
-import { motion } from 'framer-motion';
+import { motion, AnimatePresence } from 'framer-motion';
 import { cn } from '../lib/utils';
 
+interface DiscordRole {
+  id: string;
+  name: string;
+  color: number;
+  position: number;
+}
+
+interface DiscordGuild {
+  name: string;
+  memberCount: number;
+  icon: string | null;
+  roles: DiscordRole[];
+}
+
 export const ServerConfig = () => {
-  const [activeTab, setActiveTab] = useState<'identity' | 'permissions' | 'modules' | 'alerts'>('identity');
+  const [activeTab, setActiveTab] = useState<'identity' | 'permissions' | 'modules' | 'alerts' | 'discord'>('identity');
+  const [discordData, setDiscordData] = useState<DiscordGuild | null>(null);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  const fetchDiscordData = async () => {
+    setLoading(true);
+    setError(null);
+    try {
+      const response = await fetch('/api/discord/guild');
+      if (!response.ok) {
+        const data = await response.json();
+        throw new Error(data.error || 'Failed to fetch Discord data');
+      }
+      const data = await response.json();
+      setDiscordData(data);
+    } catch (err: any) {
+      setError(err.message);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    if (activeTab === 'discord') {
+      fetchDiscordData();
+    }
+  }, [activeTab]);
+
+  const intToHex = (color: number) => {
+    if (color === 0) return '#99aab5';
+    return `#${color.toString(16).padStart(6, '0')}`;
+  };
 
   return (
     <div className="space-y-8 animate-in fade-in duration-500">
@@ -26,13 +76,13 @@ export const ServerConfig = () => {
           <h1 className="text-4xl font-bold tracking-tight">Server Configuration</h1>
           <p className="text-text-secondary">Fine-tune your bot's identity and core server settings.</p>
         </div>
-        <div className="flex items-center gap-2 p-1 bg-bg-secondary rounded-xl border border-border">
-          {['identity', 'permissions', 'modules', 'alerts'].map((t) => (
+        <div className="flex items-center gap-2 p-1 bg-bg-secondary rounded-xl border border-border overflow-x-auto max-w-full">
+          {['identity', 'permissions', 'modules', 'alerts', 'discord'].map((t) => (
             <button 
               key={t}
               onClick={() => setActiveTab(t as any)}
               className={cn(
-                "px-4 py-1.5 rounded-lg text-[10px] uppercase tracking-widest font-bold transition-all capitalize", 
+                "px-4 py-1.5 rounded-lg text-[10px] uppercase tracking-widest font-bold transition-all capitalize whitespace-nowrap", 
                 activeTab === t ? "bg-white text-black shadow-sm" : "text-text-secondary hover:text-text-primary"
               )}
             >
@@ -313,6 +363,159 @@ export const ServerConfig = () => {
               </div>
             ))}
           </div>
+        </div>
+      )}
+
+      {activeTab === 'discord' && (
+        <div className="space-y-8">
+          {loading ? (
+            <div className="glass p-12 rounded-2xl border border-border flex flex-col items-center justify-center gap-4">
+              <RefreshCw size={32} className="animate-spin text-white/50" />
+              <p className="text-xs font-bold uppercase tracking-widest text-text-secondary">Fetching Discord Data...</p>
+            </div>
+          ) : error ? (
+            <div className="glass p-12 rounded-2xl border border-border flex flex-col items-center justify-center gap-6 text-center">
+              <div className="w-16 h-16 rounded-full bg-destructive/10 flex items-center justify-center text-destructive">
+                <AlertCircle size={32} />
+              </div>
+              <div className="space-y-2">
+                <h3 className="font-bold text-lg">Discord Integration Error</h3>
+                <p className="text-sm text-text-secondary max-w-md mx-auto">{error}</p>
+              </div>
+              <div className="flex flex-col gap-3 w-full max-w-xs">
+                <button 
+                  onClick={fetchDiscordData}
+                  className="w-full py-3 rounded-xl bg-white text-black font-bold text-xs uppercase tracking-widest hover:bg-white/90 transition-all"
+                >
+                  Retry Connection
+                </button>
+                <p className="text-[10px] text-text-secondary uppercase tracking-widest">
+                  Ensure DISCORD_BOT_TOKEN and DISCORD_GUILD_ID are set in your environment.
+                </p>
+              </div>
+            </div>
+          ) : discordData ? (
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+              <div className="lg:col-span-2 space-y-6">
+                <div className="glass p-8 rounded-2xl border border-border space-y-8">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-4">
+                      <div className="w-16 h-16 rounded-2xl bg-bg-tertiary border border-border overflow-hidden shadow-xl">
+                        {discordData.icon ? (
+                          <img src={discordData.icon} alt={discordData.name} className="w-full h-full object-cover" referrerPolicy="no-referrer" />
+                        ) : (
+                          <div className="w-full h-full flex items-center justify-center text-white/20">
+                            <Users size={32} />
+                          </div>
+                        )}
+                      </div>
+                      <div>
+                        <h2 className="text-2xl font-bold tracking-tight">{discordData.name}</h2>
+                        <div className="flex items-center gap-2 text-text-secondary">
+                          <Users size={14} />
+                          <span className="text-xs font-bold uppercase tracking-widest">{discordData.memberCount.toLocaleString()} Members</span>
+                        </div>
+                      </div>
+                    </div>
+                    <button className="p-3 rounded-xl glass border border-border hover:bg-white/10 transition-all text-text-secondary hover:text-white">
+                      <ExternalLink size={20} />
+                    </button>
+                  </div>
+
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    <div className="p-4 rounded-xl bg-white/5 border border-white/10 space-y-1">
+                      <p className="text-[10px] font-bold text-text-secondary uppercase tracking-widest">Server Name</p>
+                      <p className="text-sm font-bold">{discordData.name}</p>
+                    </div>
+                    <div className="p-4 rounded-xl bg-white/5 border border-white/10 space-y-1">
+                      <p className="text-[10px] font-bold text-text-secondary uppercase tracking-widest">Total Roles</p>
+                      <p className="text-sm font-bold">{discordData.roles.length}</p>
+                    </div>
+                    <div className="p-4 rounded-xl bg-white/5 border border-white/10 space-y-1">
+                      <p className="text-[10px] font-bold text-text-secondary uppercase tracking-widest">Verification Level</p>
+                      <p className="text-sm font-bold">High</p>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="glass rounded-2xl border border-border overflow-hidden">
+                  <div className="px-8 py-6 border-b border-border bg-white/5 flex items-center justify-between">
+                    <div>
+                      <h3 className="font-bold text-sm uppercase tracking-widest">Server Roles</h3>
+                      <p className="text-xs text-text-secondary">A list of all roles available in your Discord server.</p>
+                    </div>
+                    <div className="px-3 py-1 rounded-full bg-white/10 border border-white/20 text-[10px] font-bold uppercase tracking-widest">
+                      {discordData.roles.length} Roles
+                    </div>
+                  </div>
+                  <div className="max-h-[400px] overflow-y-auto">
+                    <table className="w-full text-left border-collapse">
+                      <thead>
+                        <tr className="border-b border-border bg-white/[0.02]">
+                          <th className="px-8 py-4 text-[10px] font-bold uppercase tracking-widest text-text-secondary">Role Name</th>
+                          <th className="px-8 py-4 text-[10px] font-bold uppercase tracking-widest text-text-secondary">ID</th>
+                          <th className="px-8 py-4 text-[10px] font-bold uppercase tracking-widest text-text-secondary text-right">Color</th>
+                        </tr>
+                      </thead>
+                      <tbody className="divide-y divide-border">
+                        {discordData.roles.map((role) => (
+                          <tr key={role.id} className="hover:bg-white/5 transition-colors group">
+                            <td className="px-8 py-4">
+                              <div className="flex items-center gap-3">
+                                <div 
+                                  className="w-3 h-3 rounded-full shadow-sm" 
+                                  style={{ backgroundColor: intToHex(role.color) }}
+                                />
+                                <span className="text-xs font-bold uppercase tracking-widest group-hover:text-white transition-colors">{role.name}</span>
+                              </div>
+                            </td>
+                            <td className="px-8 py-4">
+                              <span className="text-[10px] font-mono text-text-secondary">{role.id}</span>
+                            </td>
+                            <td className="px-8 py-4 text-right">
+                              <span className="text-[10px] font-mono text-text-secondary uppercase">{intToHex(role.color)}</span>
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+              </div>
+
+              <div className="space-y-6">
+                <div className="glass p-6 rounded-2xl border border-border space-y-4">
+                  <h3 className="font-bold text-[10px] uppercase tracking-widest text-text-secondary">Integration Status</h3>
+                  <div className="flex items-center justify-between p-4 rounded-xl bg-white/5 border border-white/10">
+                    <div className="flex items-center gap-3">
+                      <div className="w-2 h-2 rounded-full bg-white shadow-[0_0_10px_rgba(255,255,255,0.5)]"></div>
+                      <span className="text-xs font-bold uppercase tracking-widest">Connected</span>
+                    </div>
+                    <span className="text-[10px] text-text-secondary font-mono">v10 API</span>
+                  </div>
+                  <p className="text-[10px] text-text-secondary leading-relaxed">
+                    Your bot is currently connected to the Discord API and fetching real-time server metadata.
+                  </p>
+                </div>
+
+                <div className="glass p-6 rounded-2xl border border-border space-y-4">
+                  <h3 className="font-bold text-[10px] uppercase tracking-widest text-text-secondary">Quick Actions</h3>
+                  <button className="w-full py-3 rounded-xl bg-white text-black font-bold text-[10px] uppercase tracking-widest hover:bg-white/90 transition-all flex items-center justify-center gap-2">
+                    <RefreshCw size={14} />
+                    Sync Metadata
+                  </button>
+                  <button className="w-full py-3 rounded-xl glass border border-border text-[10px] font-bold uppercase tracking-widest hover:bg-white/10 transition-all flex items-center justify-center gap-2">
+                    <Hash size={14} />
+                    View Channels
+                  </button>
+                </div>
+              </div>
+            </div>
+          ) : (
+            <div className="glass p-12 rounded-2xl border border-border flex flex-col items-center justify-center gap-4">
+              <p className="text-xs font-bold uppercase tracking-widest text-text-secondary">No Discord data available.</p>
+            </div>
+          )}
         </div>
       )}
     </div>
