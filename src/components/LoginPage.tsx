@@ -6,7 +6,7 @@ import { getAccountByEmail } from '../lib/accounts';
 import { User } from '@supabase/supabase-js';
 
 export const LoginPage = () => {
-  const { setUser, setRole, setMockSession } = useAuthStore();
+  const { setUser, setRole } = useAuthStore();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [isLoading, setIsLoading] = useState(false);
@@ -20,29 +20,20 @@ export const LoginPage = () => {
     const normalizedEmail = email.toLowerCase().trim();
 
     const tryMockLogin = () => {
-      const mockAccounts: Record<string, string> = {
-        'owner@example.com': 'owner',
-        'admin@example.com': 'admin',
-        'mod@example.com': 'mod'
-      };
+      const account = getAccountByEmail(normalizedEmail);
+      if (account?.testPassword && account.testPassword === password) {
+        const mockUser: User = {
+          id: 'mock-id-' + account.role,
+          email: account.email,
+          app_metadata: {},
+          user_metadata: {},
+          aud: 'authenticated',
+          created_at: new Date().toISOString()
+        } as User;
 
-      if (mockAccounts[normalizedEmail] && mockAccounts[normalizedEmail] === password) {
-        const account = getAccountByEmail(normalizedEmail);
-        if (account) {
-          const mockUser: User = {
-            id: 'mock-id-' + account.role,
-            email: account.email,
-            app_metadata: {},
-            user_metadata: {},
-            aud: 'authenticated',
-            created_at: new Date().toISOString()
-          } as User;
-
-          setUser(mockUser);
-          setRole(account.role as any);
-          setMockSession(true);
-          return true;
-        }
+        setUser(mockUser);
+        setRole(account.role as any);
+        return true;
       }
 
       return false;
@@ -67,15 +58,8 @@ export const LoginPage = () => {
       });
 
       if (loginError) throw loginError;
-      setMockSession(false);
     } catch (err: any) {
       console.error('Login Error:', err);
-
-      // Testing fallback: allow local mock accounts even when Supabase is configured.
-      if (tryMockLogin()) {
-        setIsLoading(false);
-        return;
-      }
 
       if (err.message?.includes('Failed to fetch')) {
         setError('Network error: Unable to connect to authentication service. Please check your internet connection or Supabase configuration.');
