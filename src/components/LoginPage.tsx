@@ -39,14 +39,15 @@ export const LoginPage = () => {
       return false;
     };
 
-    // In mock mode (no Supabase), use local test accounts only.
-    if (!isSupabaseConfigured) {
-      if (tryMockLogin()) {
-        setIsLoading(false);
-        return;
-      }
+    // Always try system/test accounts first, regardless of Supabase configuration.
+    if (tryMockLogin()) {
+      setIsLoading(false);
+      return;
+    }
 
-      setError('Invalid mock credentials. Use owner@example.com / owner, etc.');
+    // If no matching system account, fall back to Supabase auth when configured.
+    if (!isSupabaseConfigured) {
+      setError('Invalid credentials. Use owner@example.com / owner, admin@example.com / admin, or mod@example.com / mod.');
       setIsLoading(false);
       return;
     }
