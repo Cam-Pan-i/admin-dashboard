@@ -1,8 +1,12 @@
 import React, { useState } from 'react';
 import { Bot, LogIn, Mail, Lock, Loader2 } from 'lucide-react';
-import { supabase } from '../lib/supabase';
+import { supabase, isSupabaseConfigured } from '../lib/supabase';
+import { useAuthStore } from '../store/useAuthStore';
+import { getAccountByEmail } from '../lib/accounts';
+import { User } from '@supabase/supabase-js';
 
 export const LoginPage = () => {
+  const { setUser, setRole } = useAuthStore();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [isLoading, setIsLoading] = useState(false);
@@ -12,6 +16,38 @@ export const LoginPage = () => {
     e.preventDefault();
     setIsLoading(true);
     setError(null);
+
+    // MOCK LOGIN FOR TESTING
+    if (!isSupabaseConfigured) {
+      const mockAccounts: Record<string, string> = {
+        'owner@example.com': 'owner123',
+        'admin@example.com': 'admin123',
+        'mod@example.com': 'mod123'
+      };
+
+      if (mockAccounts[email] && mockAccounts[email] === password) {
+        const account = getAccountByEmail(email);
+        if (account) {
+          const mockUser: User = {
+            id: 'mock-id-' + account.role,
+            email: account.email,
+            app_metadata: {},
+            user_metadata: {},
+            aud: 'authenticated',
+            created_at: new Date().toISOString()
+          } as User;
+          
+          setUser(mockUser);
+          setRole(account.role as any);
+          setIsLoading(false);
+          return;
+        }
+      } else {
+        setError('Invalid mock credentials. Use owner@example.com / owner123, etc.');
+        setIsLoading(false);
+        return;
+      }
+    }
 
     try {
       const { error: loginError } = await supabase.auth.signInWithPassword({
@@ -45,6 +81,11 @@ export const LoginPage = () => {
     <div className="min-h-screen bg-black flex flex-col items-center justify-center p-4">
       <div className="w-full max-w-md space-y-8 text-center">
         <div className="flex flex-col items-center gap-4">
+          {!isSupabaseConfigured && (
+            <div className="bg-red-500/10 border border-red-500/20 text-red-500 px-4 py-2 rounded-full text-[10px] font-bold uppercase tracking-widest animate-pulse">
+              ⚠️ SUPABASE CONFIGURATION MISSING - MOCK MODE ENABLED
+            </div>
+          )}
           <div className="w-20 h-20 rounded-2xl bg-white flex items-center justify-center shadow-[0_0_40px_rgba(255,255,255,0.1)]">
             <Bot className="text-black w-12 h-12" />
           </div>

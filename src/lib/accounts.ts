@@ -21,15 +21,32 @@ export interface AccountDefinition {
  */
 const ACCOUNTS_MAP = new Map<string, AccountDefinition>([
   [
-    'campankaka@gmail.com', 
+    'owner@example.com', 
     {
-      email: 'campankaka@gmail.com',
+      email: 'owner@example.com',
       role: 'owner',
       permissions: ['*'], // All permissions
       isSystemAccount: true
     }
   ],
-  // Add more accounts here
+  [
+    'admin@example.com', 
+    {
+      email: 'admin@example.com',
+      role: 'admin',
+      permissions: ['dashboard', 'moderation', 'config', 'embeds'],
+      isSystemAccount: true
+    }
+  ],
+  [
+    'mod@example.com', 
+    {
+      email: 'mod@example.com',
+      role: 'mod',
+      permissions: ['dashboard', 'moderation'],
+      isSystemAccount: true
+    }
+  ],
 ]);
 
 /**

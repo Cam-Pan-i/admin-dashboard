@@ -1,15 +1,15 @@
 import React from 'react';
-import { Search, Bell, ChevronDown, Command, LogOut, Menu, X } from 'lucide-react';
+import { Search, Bell, ChevronDown, Command, LogOut, Menu, X, AlertTriangle } from 'lucide-react';
 import { useAppStore } from '../store/useAppStore';
 import { useAuthStore } from '../store/useAuthStore';
-import { supabase } from '../lib/supabase';
+import { isSupabaseConfigured } from '../lib/supabase';
 
 export const Topbar = () => {
   const { currentGuild, isMobileMenuOpen, setMobileMenuOpen } = useAppStore();
-  const { user, role } = useAuthStore();
+  const { user, role, signOut } = useAuthStore();
 
   const handleLogout = async () => {
-    await supabase.auth.signOut();
+    await signOut();
   };
 
   return (
@@ -21,6 +21,13 @@ export const Topbar = () => {
         >
           {isMobileMenuOpen ? <X size={20} /> : <Menu size={20} />}
         </button>
+
+        {!isSupabaseConfigured && (
+          <div className="hidden lg:flex items-center gap-2 px-3 py-1 rounded-full bg-red-500/10 border border-red-500/20 text-red-500 text-[10px] font-bold uppercase tracking-widest animate-pulse">
+            <AlertTriangle size={12} />
+            Mock Mode
+          </div>
+        )}
 
         <div className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-bg-secondary border border-border cursor-pointer hover:border-white/50 transition-colors group">
           <div className="w-6 h-6 rounded-md bg-white text-black flex items-center justify-center text-[10px] font-bold">

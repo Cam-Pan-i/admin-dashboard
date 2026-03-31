@@ -18,7 +18,7 @@ import { Bot } from 'lucide-react';
 
 import { useAuthStore } from './store/useAuthStore';
 import { LoginPage } from './components/LoginPage';
-import { supabase } from './lib/supabase';
+import { supabase, isSupabaseConfigured } from './lib/supabase';
 import { useEffect } from 'react';
 import { getAccountByEmail } from './lib/accounts';
 
@@ -39,22 +39,30 @@ export default function App() {
       }
     };
 
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      setUser(session?.user ?? null);
-      if (session?.user) {
-        updateRole(session.user.email);
-      }
-    });
+    if (isSupabaseConfigured) {
+      supabase.auth.getSession().then(({ data: { session } }) => {
+        setUser(session?.user ?? null);
+        if (session?.user) {
+          updateRole(session.user.email);
+        }
+      });
 
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
-      setUser(session?.user ?? null);
-      if (session?.user) {
-        updateRole(session.user.email);
-      }
-    });
+      const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+        setUser(session?.user ?? null);
+        if (session?.user) {
+          updateRole(session.user.email);
+        }
+      });
 
-    return () => subscription.unsubscribe();
-  }, [setUser, setRole]);
+      return () => subscription.unsubscribe();
+    } else {
+      // If not configured, we assume mock mode is handled by LoginPage
+      // But we need to stop the loading state if no user is present
+      if (!user) {
+        setUser(null);
+      }
+    }
+  }, [setUser, setRole, user]);
 
   if (isLoading) {
     return (
