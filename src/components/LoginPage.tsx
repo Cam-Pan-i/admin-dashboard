@@ -17,37 +17,38 @@ export const LoginPage = () => {
     setIsLoading(true);
     setError(null);
 
-    // MOCK LOGIN FOR TESTING
-    if (!isSupabaseConfigured) {
-      const mockAccounts: Record<string, string> = {
-        'owner@example.com': 'owner',
-        'admin@example.com': 'admin',
-        'mod@example.com': 'mod'
-      };
+    // MOCK LOGIN FOR TESTING - Priority check
+    const mockAccounts: Record<string, string> = {
+      'owner@example.com': 'owner',
+      'admin@example.com': 'admin',
+      'mod@example.com': 'mod'
+    };
 
-      const normalizedEmail = email.toLowerCase().trim();
-      if (mockAccounts[normalizedEmail] && mockAccounts[normalizedEmail] === password) {
-        const account = getAccountByEmail(normalizedEmail);
-        if (account) {
-          const mockUser: User = {
-            id: 'mock-id-' + account.role,
-            email: account.email,
-            app_metadata: {},
-            user_metadata: {},
-            aud: 'authenticated',
-            created_at: new Date().toISOString()
-          } as User;
-          
-          setUser(mockUser);
-          setRole(account.role as any);
-          setIsLoading(false);
-          return;
-        }
-      } else {
-        setError('Invalid mock credentials. Use owner@example.com / owner123, etc.');
+    const normalizedEmail = email.toLowerCase().trim();
+    if (mockAccounts[normalizedEmail] && mockAccounts[normalizedEmail] === password) {
+      const account = getAccountByEmail(normalizedEmail);
+      if (account) {
+        const mockUser: User = {
+          id: 'mock-id-' + account.role,
+          email: account.email,
+          app_metadata: {},
+          user_metadata: {},
+          aud: 'authenticated',
+          created_at: new Date().toISOString()
+        } as User;
+        
+        setUser(mockUser);
+        setRole(account.role as any);
         setIsLoading(false);
         return;
       }
+    }
+
+    // If not a mock account and Supabase is not configured, show error
+    if (!isSupabaseConfigured) {
+      setError('Invalid mock credentials. Use owner@example.com / owner, etc.');
+      setIsLoading(false);
+      return;
     }
 
     try {
