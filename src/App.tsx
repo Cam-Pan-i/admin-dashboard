@@ -56,13 +56,13 @@ export default function App() {
 
       return () => subscription.unsubscribe();
     } else {
-      // If not configured, we assume mock mode is handled by LoginPage
-      // But we need to stop the loading state if no user is present
-      if (!user) {
+      // If not configured, we rely on the persisted state in useAuthStore
+      // We just need to ensure isLoading becomes false if it's still true
+      if (isLoading && !user) {
         setUser(null);
       }
     }
-  }, [setUser, setRole, user]);
+  }, [setUser, setRole, user, isLoading]);
 
   if (isLoading) {
     return (
