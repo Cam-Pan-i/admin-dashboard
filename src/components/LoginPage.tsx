@@ -20,13 +20,14 @@ export const LoginPage = () => {
     // MOCK LOGIN FOR TESTING
     if (!isSupabaseConfigured) {
       const mockAccounts: Record<string, string> = {
-        'owner@example.com': 'owner123',
-        'admin@example.com': 'admin123',
-        'mod@example.com': 'mod123'
+        'owner@example.com': 'owner',
+        'admin@example.com': 'admin',
+        'mod@example.com': 'mod'
       };
 
-      if (mockAccounts[email] && mockAccounts[email] === password) {
-        const account = getAccountByEmail(email);
+      const normalizedEmail = email.toLowerCase().trim();
+      if (mockAccounts[normalizedEmail] && mockAccounts[normalizedEmail] === password) {
+        const account = getAccountByEmail(normalizedEmail);
         if (account) {
           const mockUser: User = {
             id: 'mock-id-' + account.role,
