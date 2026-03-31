@@ -10,6 +10,8 @@ import { ModerationSuite } from './components/ModerationSuite';
 import { AnalyticsLab } from './components/AnalyticsLab';
 import { ServerConfig } from './components/ServerConfig';
 import { GeminiAssistant } from './components/GeminiAssistant';
+import { AccountControl } from './components/AccountControl';
+import { EmbedBuilder } from './components/EmbedBuilder';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Bot } from 'lucide-react';
@@ -18,6 +20,7 @@ import { useAuthStore } from './store/useAuthStore';
 import { LoginPage } from './components/LoginPage';
 import { supabase } from './lib/supabase';
 import { useEffect } from 'react';
+import { getAccountByEmail } from './lib/accounts';
 
 const queryClient = new QueryClient();
 
@@ -26,25 +29,27 @@ export default function App() {
   const { user, setUser, setRole, isLoading } = useAuthStore();
 
   useEffect(() => {
+    const updateRole = (email: string | undefined) => {
+      const account = getAccountByEmail(email);
+      if (account) {
+        setRole(account.role as any);
+      } else {
+        // Default role for non-system accounts
+        setRole('mod');
+      }
+    };
+
     supabase.auth.getSession().then(({ data: { session } }) => {
       setUser(session?.user ?? null);
       if (session?.user) {
-        const email = session.user.email;
-        if (email === 'owner@example.com' || email === 'campankaka@gmail.com') setRole('owner');
-        else if (email === 'admin@example.com') setRole('admin');
-        else if (email === 'mod@example.com') setRole('mod');
-        else setRole('mod');
+        updateRole(session.user.email);
       }
     });
 
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
       setUser(session?.user ?? null);
       if (session?.user) {
-        const email = session.user.email;
-        if (email === 'owner@example.com' || email === 'campankaka@gmail.com') setRole('owner');
-        else if (email === 'admin@example.com') setRole('admin');
-        else if (email === 'mod@example.com') setRole('mod');
-        else setRole('mod');
+        updateRole(session.user.email);
       }
     });
 
@@ -85,6 +90,10 @@ export default function App() {
         return <ServerConfig />;
       case 'ai':
         return <GeminiAssistant />;
+      case 'embeds':
+        return <EmbedBuilder />;
+      case 'accounts':
+        return <AccountControl />;
       default:
         return (
           <div className="flex flex-col items-center justify-center h-[60vh] space-y-4">
@@ -106,7 +115,7 @@ export default function App() {
         <div className="flex-1 flex flex-col min-w-0">
           <Topbar />
           
-          <main className="flex-1 p-8 overflow-y-auto custom-scrollbar">
+          <main className="flex-1 p-4 md:p-8 overflow-y-auto custom-scrollbar">
             <div className="max-w-7xl mx-auto">
               <AnimatePresence mode="wait">
                 <motion.div

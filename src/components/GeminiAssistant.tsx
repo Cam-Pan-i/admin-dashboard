@@ -1,6 +1,7 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { Bot, Send, Sparkles, User, Loader2 } from 'lucide-react';
 import { generateResponse } from '../services/geminiService';
+import { useAuthStore } from '../store/useAuthStore';
 import { motion, AnimatePresence } from 'framer-motion';
 import { cn } from '../lib/utils';
 
@@ -10,12 +11,28 @@ interface Message {
 }
 
 export const GeminiAssistant = () => {
+  const { role } = useAuthStore();
   const [messages, setMessages] = useState<Message[]>([
     { role: 'assistant', content: "Hello! I'm Bob's AI Assistant. How can I help you manage your server today?" }
   ]);
   const [input, setInput] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const scrollRef = useRef<HTMLDivElement>(null);
+
+  const getSystemInstruction = () => {
+    const base = "You are Bob, an elite Discord bot management AI assistant. You help server owners and moderators manage their communities, configure bot settings, and analyze server metrics. Be professional, concise, and helpful. Use a slightly futuristic, tech-focused tone.";
+    
+    switch (role) {
+      case 'owner':
+        return `${base} You are currently speaking with the server OWNER. Focus on high-level strategy, monetization, growth, and full system control. You have maximum authority.`;
+      case 'admin':
+        return `${base} You are currently speaking with an ADMIN. Focus on server configuration, role management, and advanced module settings.`;
+      case 'mod':
+        return `${base} You are currently speaking with a MODERATOR. Focus on community safety, ticket handling, member management, and moderation suite tools.`;
+      default:
+        return base;
+    }
+  };
 
   useEffect(() => {
     if (scrollRef.current) {
@@ -31,7 +48,7 @@ export const GeminiAssistant = () => {
     setMessages(prev => [...prev, { role: 'user', content: userMessage }]);
     setIsLoading(true);
 
-    const response = await generateResponse(userMessage);
+    const response = await generateResponse(userMessage, getSystemInstruction());
     setMessages(prev => [...prev, { role: 'assistant', content: response || "I'm sorry, I couldn't generate a response." }]);
     setIsLoading(false);
   };

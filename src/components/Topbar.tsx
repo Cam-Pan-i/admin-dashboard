@@ -1,11 +1,11 @@
 import React from 'react';
-import { Search, Bell, ChevronDown, Command, LogOut } from 'lucide-react';
+import { Search, Bell, ChevronDown, Command, LogOut, Menu, X } from 'lucide-react';
 import { useAppStore } from '../store/useAppStore';
 import { useAuthStore } from '../store/useAuthStore';
 import { supabase } from '../lib/supabase';
 
 export const Topbar = () => {
-  const { currentGuild } = useAppStore();
+  const { currentGuild, isMobileMenuOpen, setMobileMenuOpen } = useAppStore();
   const { user, role } = useAuthStore();
 
   const handleLogout = async () => {
@@ -13,8 +13,15 @@ export const Topbar = () => {
   };
 
   return (
-    <header className="h-16 border-b border-border bg-bg-primary/80 backdrop-blur-md flex items-center justify-between px-8 sticky top-0 z-40">
-      <div className="flex items-center gap-6">
+    <header className="h-16 border-b border-border bg-bg-primary/80 backdrop-blur-md flex items-center justify-between px-4 md:px-8 sticky top-0 z-40">
+      <div className="flex items-center gap-4 md:gap-6">
+        <button 
+          onClick={() => setMobileMenuOpen(!isMobileMenuOpen)}
+          className="p-2 rounded-xl hover:bg-white/5 text-text-secondary hover:text-text-primary transition-all md:hidden"
+        >
+          {isMobileMenuOpen ? <X size={20} /> : <Menu size={20} />}
+        </button>
+
         <div className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-bg-secondary border border-border cursor-pointer hover:border-white/50 transition-colors group">
           <div className="w-6 h-6 rounded-md bg-white text-black flex items-center justify-center text-[10px] font-bold">
             BS

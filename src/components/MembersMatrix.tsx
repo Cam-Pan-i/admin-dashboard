@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { 
   Search, 
   Filter, 
@@ -15,127 +15,53 @@ import {
   Calendar,
   ShieldAlert,
   Activity,
-  User
+  User,
+  RefreshCw,
+  AlertCircle,
+  Zap,
+  Database
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { cn } from '../lib/utils';
+import { format } from 'date-fns';
+import { UserBackgroundModal } from './UserBackgroundModal';
 
-const members = [
-  { 
-    id: '1', 
-    username: 'Kaka#0001', 
-    joinDate: '2024-03-15', 
-    status: 'online', 
-    roles: ['Owner', 'Admin'], 
-    messages: 1240, 
-    modHistory: 0,
-    bio: 'The creator of this community. Always here to help!',
-    location: 'San Francisco, CA',
-    lastSeen: 'Just now'
-  },
-  { 
-    id: '2', 
-    username: 'Bob#1234', 
-    joinDate: '2024-03-16', 
-    status: 'idle', 
-    roles: ['Moderator'], 
-    messages: 850, 
-    modHistory: 2,
-    bio: 'Keeping the peace since 2024.',
-    location: 'London, UK',
-    lastSeen: '5 mins ago'
-  },
-  { 
-    id: '3', 
-    username: 'Alice#5678', 
-    joinDate: '2024-03-18', 
-    status: 'offline', 
-    roles: ['Verified'], 
-    messages: 320, 
-    modHistory: 0,
-    bio: 'Loves coding and coffee.',
-    location: 'Berlin, DE',
-    lastSeen: '2 hours ago'
-  },
-  { 
-    id: '4', 
-    username: 'Charlie#9999', 
-    joinDate: '2024-03-20', 
-    status: 'online', 
-    roles: ['Verified'], 
-    messages: 150, 
-    modHistory: 1,
-    bio: 'Just here for the memes.',
-    location: 'New York, NY',
-    lastSeen: 'Online'
-  },
-  { 
-    id: '5', 
-    username: 'David#1111', 
-    joinDate: '2024-03-21', 
-    status: 'online', 
-    roles: ['New Member'], 
-    messages: 12, 
-    modHistory: 0,
-    bio: 'Excited to be here!',
-    location: 'Toronto, CA',
-    lastSeen: 'Online'
-  },
-  { 
-    id: '6', 
-    username: 'Eve#2222', 
-    joinDate: '2024-03-22', 
-    status: 'offline', 
-    roles: ['Verified'], 
-    messages: 45, 
-    modHistory: 0,
-    bio: 'Digital artist and explorer.',
-    location: 'Paris, FR',
-    lastSeen: '1 day ago'
-  },
-  { 
-    id: '7', 
-    username: 'Frank#3333', 
-    joinDate: '2024-03-23', 
-    status: 'idle', 
-    roles: ['Verified'], 
-    messages: 89, 
-    modHistory: 0,
-    bio: 'Gamer and tech enthusiast.',
-    location: 'Tokyo, JP',
-    lastSeen: '30 mins ago'
-  },
-  { 
-    id: '8', 
-    username: 'Grace#4444', 
-    joinDate: '2024-03-24', 
-    status: 'online', 
-    roles: ['Verified'], 
-    messages: 210, 
-    modHistory: 0,
-    bio: 'Community builder.',
-    location: 'Sydney, AU',
-    lastSeen: 'Online'
-  },
-];
+interface DiscordRole {
+  id: string;
+  name: string;
+  color: number;
+}
 
-type Member = typeof members[0];
+interface Member {
+  id: string;
+  username: string;
+  avatar: string | null;
+  joinDate: string;
+  premiumSince: string | null;
+  roles: DiscordRole[];
+  status: string;
+  nickname: string | null;
+  isBot: boolean;
+  // Mock data for fields not in Discord API
+  messages?: number;
+  modHistory?: number;
+  bio?: string;
+  location?: string;
+  lastSeen?: string;
+}
 
-const RoleBadge = ({ role }: { role: string, key?: string }) => {
-  const colors: Record<string, string> = {
-    'Owner': 'bg-white/10 text-white border-white/20',
-    'Admin': 'bg-white/5 text-text-secondary border-white/10',
-    'Moderator': 'bg-white/5 text-text-secondary border-white/10',
-    'Verified': 'bg-white/5 text-text-secondary border-white/10',
-    'New Member': 'bg-white/5 text-text-secondary border-white/10',
+const RoleBadge: React.FC<{ role: DiscordRole }> = ({ role }) => {
+  const intToHex = (color: number) => {
+    if (color === 0) return '#99aab5';
+    return `#${color.toString(16).padStart(6, '0')}`;
   };
 
   return (
-    <span className={cn(
-      "px-2 py-0.5 rounded-md text-[10px] font-bold border uppercase tracking-wider",
-      colors[role] || colors['New Member']
-    )}>
-      {role}
+    <span 
+      className="px-2 py-0.5 rounded-md text-[10px] font-bold border uppercase tracking-wider bg-white/5"
+      style={{ color: intToHex(role.color), borderColor: `${intToHex(role.color)}33` }}
+    >
+      {role.name}
     </span>
   );
 };
@@ -143,6 +69,47 @@ const RoleBadge = ({ role }: { role: string, key?: string }) => {
 export const MembersMatrix = () => {
   const [search, setSearch] = useState('');
   const [selectedMember, setSelectedMember] = useState<Member | null>(null);
+  const [isBackgroundModalOpen, setIsBackgroundModalOpen] = useState(false);
+  const [members, setMembers] = useState<Member[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  const fetchMembers = async () => {
+    setLoading(true);
+    setError(null);
+    try {
+      const response = await fetch('/api/discord/members');
+      if (!response.ok) {
+        const data = await response.json();
+        throw new Error(data.error || 'Failed to fetch members');
+      }
+      const data = await response.json();
+      // Add some mock data for the fields not in Discord API
+      const enrichedData = data.map((m: any) => ({
+        ...m,
+        messages: Math.floor(Math.random() * 2000),
+        modHistory: Math.floor(Math.random() * 3),
+        bio: m.isBot ? 'I am a helpful bot.' : 'A valued member of the community.',
+        location: 'Global',
+        lastSeen: 'Online'
+      }));
+      setMembers(enrichedData);
+    } catch (err: any) {
+      setError(err.message);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchMembers();
+  }, []);
+
+  const filteredMembers = members.filter(m => 
+    m.username.toLowerCase().includes(search.toLowerCase()) || 
+    m.id.includes(search) ||
+    (m.nickname && m.nickname.toLowerCase().includes(search.toLowerCase()))
+  );
 
   return (
     <div className="space-y-6 animate-in fade-in duration-500">
@@ -175,7 +142,7 @@ export const MembersMatrix = () => {
                 <div className="flex flex-col sm:flex-row sm:items-end gap-6 mb-8">
                   <div className="w-24 h-24 rounded-3xl bg-bg-tertiary border-4 border-black overflow-hidden shadow-xl">
                     <img 
-                      src={`https://api.dicebear.com/7.x/avataaars/svg?seed=${selectedMember.username}`} 
+                      src={selectedMember.avatar || `https://api.dicebear.com/7.x/avataaars/svg?seed=${selectedMember.username}`} 
                       alt={selectedMember.username} 
                       className="w-full h-full object-cover"
                       referrerPolicy="no-referrer"
@@ -183,14 +150,19 @@ export const MembersMatrix = () => {
                   </div>
                   <div className="flex-1">
                     <div className="flex items-center gap-3 mb-1">
-                      <h2 className="text-3xl font-bold tracking-tight">{selectedMember.username}</h2>
+                      <h2 className="text-3xl font-bold tracking-tight">
+                        {selectedMember.nickname || selectedMember.username.split('#')[0]}
+                      </h2>
+                      {selectedMember.isBot && (
+                        <span className="bg-white/10 text-white text-[8px] font-bold px-1 py-0.5 rounded uppercase border border-white/20">Bot</span>
+                      )}
                       <div className={cn(
                         "w-3 h-3 rounded-full",
                         selectedMember.status === 'online' ? "bg-white shadow-[0_0_10px_rgba(255,255,255,0.5)]" : 
                         selectedMember.status === 'idle' ? "bg-white/50" : "bg-white/20"
                       )}></div>
                     </div>
-                    <p className="text-text-secondary font-mono text-sm">ID: {selectedMember.id}8293471029384</p>
+                    <p className="text-text-secondary font-mono text-sm">ID: {selectedMember.id}</p>
                   </div>
                 </div>
 
@@ -204,21 +176,23 @@ export const MembersMatrix = () => {
                     </div>
 
                     <div className="flex flex-wrap gap-2">
-                      {selectedMember.roles.map(role => <RoleBadge key={role} role={role} />)}
+                      {selectedMember.roles.map(role => <RoleBadge key={role.id} role={role} />)}
                     </div>
 
                     <div className="space-y-3">
                       <div className="flex items-center gap-3 text-text-secondary">
                         <Calendar size={16} className="text-white/40" />
-                        <span className="text-xs">Joined <span className="text-white">{selectedMember.joinDate}</span></span>
+                        <span className="text-xs">Joined <span className="text-white">{format(new Date(selectedMember.joinDate), 'PPP')}</span></span>
                       </div>
+                      {selectedMember.premiumSince && (
+                        <div className="flex items-center gap-3 text-text-secondary">
+                          <Zap size={16} className="text-white/40" />
+                          <span className="text-xs">Boosting since <span className="text-white">{format(new Date(selectedMember.premiumSince), 'PPP')}</span></span>
+                        </div>
+                      )}
                       <div className="flex items-center gap-3 text-text-secondary">
                         <Clock size={16} className="text-white/40" />
                         <span className="text-xs">Last seen <span className="text-white">{selectedMember.lastSeen}</span></span>
-                      </div>
-                      <div className="flex items-center gap-3 text-text-secondary">
-                        <User size={16} className="text-white/40" />
-                        <span className="text-xs">Location <span className="text-white">{selectedMember.location}</span></span>
                       </div>
                     </div>
                   </div>
@@ -232,7 +206,7 @@ export const MembersMatrix = () => {
                             <Activity size={14} />
                             <span className="text-[10px] font-bold uppercase tracking-wider">Messages</span>
                           </div>
-                          <p className="text-2xl font-bold">{selectedMember.messages.toLocaleString()}</p>
+                          <p className="text-2xl font-bold">{(selectedMember.messages || 0).toLocaleString()}</p>
                         </div>
                         <div className="space-y-1">
                           <div className="flex items-center gap-2 text-text-secondary">
@@ -241,8 +215,8 @@ export const MembersMatrix = () => {
                           </div>
                           <p className={cn(
                             "text-2xl font-bold",
-                            selectedMember.modHistory > 0 ? "text-white" : "text-text-secondary"
-                          )}>{selectedMember.modHistory}</p>
+                            (selectedMember.modHistory || 0) > 0 ? "text-white" : "text-text-secondary"
+                          )}>{selectedMember.modHistory || 0}</p>
                         </div>
                       </div>
                     </div>
@@ -252,14 +226,13 @@ export const MembersMatrix = () => {
                         <MessageSquare size={18} />
                         Send Message
                       </button>
-                      <div className="grid grid-cols-2 gap-3">
-                        <button className="py-3 rounded-xl glass border border-border text-sm font-bold hover:bg-white/10 transition-all">
-                          Edit Profile
-                        </button>
-                        <button className="py-3 rounded-xl glass border border-destructive/20 text-destructive text-sm font-bold hover:bg-destructive/10 transition-all">
-                          Ban User
-                        </button>
-                      </div>
+                      <button 
+                        onClick={() => setIsBackgroundModalOpen(true)}
+                        className="w-full py-3 rounded-xl glass border border-white/20 text-white font-bold text-sm hover:bg-white/10 transition-all flex items-center justify-center gap-2"
+                      >
+                        <Database size={18} className="text-blue-400" />
+                        User Background
+                      </button>
                     </div>
                   </div>
                 </div>
@@ -268,6 +241,14 @@ export const MembersMatrix = () => {
           </div>
         )}
       </AnimatePresence>
+      
+      <UserBackgroundModal 
+        isOpen={isBackgroundModalOpen}
+        onClose={() => setIsBackgroundModalOpen(false)}
+        userId={selectedMember?.id || ''}
+        username={selectedMember?.username || ''}
+      />
+
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
           <h1 className="text-4xl font-bold tracking-tight">Members Matrix</h1>
@@ -306,84 +287,102 @@ export const MembersMatrix = () => {
 
       <div className="glass rounded-2xl border border-border overflow-hidden">
         <div className="overflow-x-auto">
-          <table className="w-full text-left border-collapse">
-            <thead>
-              <tr className="border-b border-border bg-white/5">
-                <th className="px-6 py-4 text-[10px] font-bold uppercase tracking-wider text-text-secondary">Member</th>
-                <th className="px-6 py-4 text-[10px] font-bold uppercase tracking-wider text-text-secondary">Status</th>
-                <th className="px-6 py-4 text-[10px] font-bold uppercase tracking-wider text-text-secondary">Join Date</th>
-                <th className="px-6 py-4 text-[10px] font-bold uppercase tracking-wider text-text-secondary">Roles</th>
-                <th className="px-6 py-4 text-[10px] font-bold uppercase tracking-wider text-text-secondary">Activity</th>
-                <th className="px-6 py-4 text-[10px] font-bold uppercase tracking-wider text-text-secondary">Actions</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-border">
-              {members.map((member) => (
-                <tr 
-                  key={member.id} 
-                  onClick={() => setSelectedMember(member)}
-                  className="hover:bg-white/5 transition-colors group cursor-pointer"
-                >
-                  <td className="px-6 py-4">
-                    <div className="flex items-center gap-3">
-                      <div className="w-10 h-10 rounded-xl bg-bg-tertiary border border-border overflow-hidden">
-                        <img src={`https://api.dicebear.com/7.x/avataaars/svg?seed=${member.username}`} alt="" referrerPolicy="no-referrer" />
-                      </div>
-                      <div>
-                        <p className="text-sm font-bold group-hover:text-white transition-colors">{member.username}</p>
-                        <p className="text-[10px] text-text-secondary font-mono">ID: {member.id}8293...</p>
-                      </div>
-                    </div>
-                  </td>
-                  <td className="px-6 py-4">
-                    <div className="flex items-center gap-2">
-                      <div className={cn(
-                        "w-2 h-2 rounded-full",
-                        member.status === 'online' ? "bg-white" : 
-                        member.status === 'idle' ? "bg-white/50" : "bg-white/20"
-                      )}></div>
-                      <span className="text-xs capitalize text-text-secondary">{member.status}</span>
-                    </div>
-                  </td>
-                  <td className="px-6 py-4">
-                    <div className="flex items-center gap-2 text-text-secondary">
-                      <Clock size={14} />
-                      <span className="text-xs">{member.joinDate}</span>
-                    </div>
-                  </td>
-                  <td className="px-6 py-4">
-                    <div className="flex flex-wrap gap-1">
-                      {member.roles.map(role => <RoleBadge key={role} role={role} />)}
-                    </div>
-                  </td>
-                  <td className="px-6 py-4">
-                    <div className="flex items-center gap-4">
-                      <div className="flex items-center gap-1 text-text-secondary">
-                        <MessageSquare size={14} />
-                        <span className="text-xs">{member.messages}</span>
-                      </div>
-                      {member.modHistory > 0 && (
-                        <div className="flex items-center gap-1 text-white">
-                          <Shield size={14} />
-                          <span className="text-xs">{member.modHistory}</span>
-                        </div>
-                      )}
-                    </div>
-                  </td>
-                  <td className="px-6 py-4">
-                    <div className="flex items-center gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
-                      <button title="Moderate" className="p-2 rounded-lg hover:bg-white/10 text-text-secondary hover:text-white transition-all">
-                        <Ban size={16} />
-                      </button>
-                      <button title="More" className="p-2 rounded-lg hover:bg-white/10 text-text-secondary hover:text-white transition-all">
-                        <MoreHorizontal size={16} />
-                      </button>
-                    </div>
-                  </td>
+          {loading ? (
+            <div className="p-12 flex flex-col items-center justify-center gap-4">
+              <RefreshCw size={32} className="animate-spin text-white/50" />
+              <p className="text-xs font-bold uppercase tracking-widest text-text-secondary">Syncing with Discord...</p>
+            </div>
+          ) : error ? (
+            <div className="p-12 flex flex-col items-center justify-center gap-4 text-center">
+              <AlertCircle size={32} className="text-destructive" />
+              <p className="text-sm text-text-secondary">{error}</p>
+              <button onClick={fetchMembers} className="px-4 py-2 rounded-xl bg-white text-black font-bold text-xs uppercase tracking-widest">Retry</button>
+            </div>
+          ) : (
+            <table className="w-full text-left border-collapse">
+              <thead>
+                <tr className="border-b border-border bg-white/5">
+                  <th className="px-6 py-4 text-[10px] font-bold uppercase tracking-wider text-text-secondary">Member</th>
+                  <th className="px-6 py-4 text-[10px] font-bold uppercase tracking-wider text-text-secondary">Status</th>
+                  <th className="px-6 py-4 text-[10px] font-bold uppercase tracking-wider text-text-secondary">Join Date</th>
+                  <th className="px-6 py-4 text-[10px] font-bold uppercase tracking-wider text-text-secondary">Roles</th>
+                  <th className="px-6 py-4 text-[10px] font-bold uppercase tracking-wider text-text-secondary">Activity</th>
+                  <th className="px-6 py-4 text-[10px] font-bold uppercase tracking-wider text-text-secondary">Actions</th>
                 </tr>
-              ))}
-            </tbody>
-          </table>
+              </thead>
+              <tbody className="divide-y divide-border">
+                {filteredMembers.map((member) => (
+                  <tr 
+                    key={member.id} 
+                    onClick={() => setSelectedMember(member)}
+                    className="hover:bg-white/5 transition-colors group cursor-pointer"
+                  >
+                    <td className="px-6 py-4">
+                      <div className="flex items-center gap-3">
+                        <div className="w-10 h-10 rounded-xl bg-bg-tertiary border border-border overflow-hidden">
+                          <img src={member.avatar || `https://api.dicebear.com/7.x/avataaars/svg?seed=${member.username}`} alt="" referrerPolicy="no-referrer" />
+                        </div>
+                        <div>
+                          <p className="text-sm font-bold group-hover:text-white transition-colors">
+                            {member.nickname || member.username.split('#')[0]}
+                          </p>
+                          <p className="text-[10px] text-text-secondary font-mono">ID: {member.id.substring(0, 8)}...</p>
+                        </div>
+                      </div>
+                    </td>
+                    <td className="px-6 py-4">
+                      <div className="flex items-center gap-2">
+                        <div className={cn(
+                          "w-2 h-2 rounded-full",
+                          member.status === 'online' ? "bg-white" : 
+                          member.status === 'idle' ? "bg-white/50" : "bg-white/20"
+                        )}></div>
+                        <span className="text-xs capitalize text-text-secondary">{member.status}</span>
+                      </div>
+                    </td>
+                    <td className="px-6 py-4">
+                      <div className="flex items-center gap-2 text-text-secondary">
+                        <Clock size={14} />
+                        <span className="text-xs">{format(new Date(member.joinDate), 'MMM d, yyyy')}</span>
+                      </div>
+                    </td>
+                    <td className="px-6 py-4">
+                      <div className="flex flex-wrap gap-1">
+                        {member.roles.slice(0, 2).map(role => <RoleBadge key={role.id} role={role} />)}
+                        {member.roles.length > 2 && (
+                          <span className="text-[10px] text-text-secondary font-bold">+{member.roles.length - 2}</span>
+                        )}
+                      </div>
+                    </td>
+                    <td className="px-6 py-4">
+                      <div className="flex items-center gap-4">
+                        <div className="flex items-center gap-1 text-text-secondary">
+                          <MessageSquare size={14} />
+                          <span className="text-xs">{member.messages}</span>
+                        </div>
+                        {(member.modHistory || 0) > 0 && (
+                          <div className="flex items-center gap-1 text-white">
+                            <Shield size={14} />
+                            <span className="text-xs">{member.modHistory}</span>
+                          </div>
+                        )}
+                      </div>
+                    </td>
+                    <td className="px-6 py-4">
+                      <div className="flex items-center gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                        <button title="Moderate" className="p-2 rounded-lg hover:bg-white/10 text-text-secondary hover:text-white transition-all">
+                          <Ban size={16} />
+                        </button>
+                        <button title="More" className="p-2 rounded-lg hover:bg-white/10 text-text-secondary hover:text-white transition-all">
+                          <MoreHorizontal size={16} />
+                        </button>
+                      </div>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          )}
         </div>
 
         <div className="px-6 py-4 bg-white/5 flex items-center justify-between border-t border-border">

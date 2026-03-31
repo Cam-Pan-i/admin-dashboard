@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { 
   Users, 
   Ticket, 
@@ -7,7 +7,10 @@ import {
   TrendingUp, 
   ArrowUpRight, 
   ArrowDownRight,
-  Activity
+  Activity,
+  Zap,
+  RefreshCw,
+  Loader2
 } from 'lucide-react';
 import { 
   AreaChart, 
@@ -18,10 +21,10 @@ import {
   Tooltip, 
   ResponsiveContainer,
   BarChart,
-  Bar,
-  Cell
+  Bar
 } from 'recharts';
 import { motion } from 'framer-motion';
+import { cn } from '../lib/utils';
 
 const data = [
   { name: 'Mon', members: 4000, commands: 2400 },
@@ -41,7 +44,7 @@ const commandData = [
   { name: '/stock', value: 120 },
 ];
 
-const StatCard = ({ title, value, trend, icon: Icon }: any) => (
+const StatCard: React.FC<{ title: string; value: string | number; trend: number; icon: any }> = ({ title, value, trend, icon: Icon }) => (
   <motion.div 
     whileHover={{ y: -5 }}
     className="glass p-6 rounded-2xl relative overflow-hidden group border border-border"
@@ -63,21 +66,69 @@ const StatCard = ({ title, value, trend, icon: Icon }: any) => (
   </motion.div>
 );
 
-import { cn } from '../lib/utils';
-import { Zap } from 'lucide-react';
+interface AuditLog {
+  id: string;
+  mod: string;
+  user: string;
+  action: string;
+  reason: string;
+  time: string;
+}
 
 export const Dashboard = () => {
+  const [guildInfo, setGuildInfo] = useState<any>(null);
+  const [loading, setLoading] = useState(true);
+  const [logs, setLogs] = useState<AuditLog[]>([]);
+  const [loadingLogs, setLoadingLogs] = useState(true);
+
+  const fetchGuild = async () => {
+    try {
+      const response = await fetch('/api/discord/guild');
+      if (response.ok) {
+        const data = await response.json();
+        setGuildInfo(data);
+      }
+    } catch (error) {
+      console.error("Failed to fetch guild info:", error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const fetchLogs = async () => {
+    setLoadingLogs(true);
+    try {
+      const response = await fetch('/api/discord/audit-logs');
+      if (response.ok) {
+        const data = await response.json();
+        setLogs(data.slice(0, 5));
+      }
+    } catch (error) {
+      console.error("Failed to fetch audit logs:", error);
+    } finally {
+      setLoadingLogs(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchGuild();
+    fetchLogs();
+  }, []);
+
   return (
     <div className="space-y-8 animate-in fade-in duration-500">
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div className="flex flex-col gap-1">
           <h1 className="text-4xl font-bold tracking-tight">Command Center</h1>
-          <p className="text-text-secondary">Real-time overview of Bob's performance and server health.</p>
+          <p className="text-text-secondary">Real-time overview of {guildInfo?.name || "Bob's"} performance and server health.</p>
         </div>
         <div className="flex items-center gap-3">
           <div className="flex items-center gap-2 px-4 py-2 rounded-2xl bg-bg-secondary border border-border">
-            <div className="w-2 h-2 rounded-full bg-white animate-pulse"></div>
-            <span className="text-xs font-bold uppercase tracking-wider">System Online</span>
+            <div className={cn(
+              "w-2 h-2 rounded-full",
+              loading ? "bg-white/20 animate-pulse" : "bg-white animate-pulse"
+            )}></div>
+            <span className="text-xs font-bold uppercase tracking-wider">{loading ? "Syncing..." : "System Online"}</span>
           </div>
           <button className="px-6 py-2 rounded-2xl bg-white text-black font-bold text-sm hover:bg-white/90 transition-all">
             Export Report
@@ -86,7 +137,12 @@ export const Dashboard = () => {
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-        <StatCard title="Total Members" value="12,482" trend={12.5} icon={Users} />
+        <StatCard 
+          title="Total Members" 
+          value={loading ? "..." : (guildInfo?.memberCount?.toLocaleString() || "12,482")} 
+          trend={12.5} 
+          icon={Users} 
+        />
         <StatCard title="Active Tickets" value="24" trend={-4.2} icon={Ticket} />
         <StatCard title="Verification Queue" value="156" trend={28.1} icon={ShieldCheck} />
         <StatCard title="Mod Actions Today" value="42" trend={8.4} icon={Shield} />
@@ -137,26 +193,37 @@ export const Dashboard = () => {
         </div>
 
         <div className="glass p-6 rounded-2xl border border-border">
-          <h3 className="text-lg font-bold mb-6">Live Activity</h3>
+          <div className="flex items-center justify-between mb-6">
+            <h3 className="text-lg font-bold">Live Activity</h3>
+            <button 
+              onClick={fetchLogs}
+              disabled={loadingLogs}
+              className="p-2 rounded-lg hover:bg-white/10 transition-all disabled:opacity-50"
+            >
+              <RefreshCw size={14} className={cn(loadingLogs && "animate-spin")} />
+            </button>
+          </div>
           <div className="space-y-4">
-            {[
-              { user: 'Kaka', action: 'joined the server', time: '2m ago', type: 'join' },
-              { user: 'Bob', action: 'used /shop', time: '5m ago', type: 'command' },
-              { user: 'ModBot', action: 'banned User#1234', time: '12m ago', type: 'mod' },
-              { user: 'Alice', action: 'opened a ticket', time: '15m ago', type: 'ticket' },
-              { user: 'Charlie', action: 'verified successfully', time: '22m ago', type: 'verify' },
-            ].map((item, i) => (
-              <div key={i} className="flex items-center gap-3 p-3 rounded-xl hover:bg-white/5 transition-colors group cursor-pointer">
+            {loadingLogs && logs.length === 0 ? (
+              <div className="py-10 flex flex-col items-center justify-center gap-3">
+                <Loader2 size={24} className="animate-spin text-white/20" />
+                <p className="text-[10px] font-bold uppercase tracking-widest text-text-secondary">Syncing logs...</p>
+              </div>
+            ) : logs.map((log) => (
+              <div key={log.id} className="flex items-center gap-3 p-3 rounded-xl hover:bg-white/5 transition-colors group cursor-pointer">
                 <div className="w-10 h-10 rounded-xl bg-bg-tertiary border border-border flex items-center justify-center shrink-0 group-hover:border-white/20 transition-colors">
-                  <Zap size={18} className="text-text-secondary group-hover:text-white transition-colors" />
+                  <Shield size={18} className="text-text-secondary group-hover:text-white transition-colors" />
                 </div>
                 <div className="flex-1 min-w-0">
-                  <p className="text-sm font-bold truncate group-hover:text-white transition-colors">{item.user}</p>
-                  <p className="text-xs text-text-secondary truncate">{item.action}</p>
+                  <p className="text-sm font-bold truncate group-hover:text-white transition-colors">{log.mod}</p>
+                  <p className="text-xs text-text-secondary truncate">{log.action}ed {log.user}</p>
                 </div>
-                <span className="text-[10px] text-text-secondary whitespace-nowrap font-mono uppercase">{item.time}</span>
+                <span className="text-[10px] text-text-secondary whitespace-nowrap font-mono uppercase">{log.time}</span>
               </div>
             ))}
+            {logs.length === 0 && !loadingLogs && (
+              <p className="text-center py-10 text-[10px] uppercase font-bold text-text-secondary">No recent activity</p>
+            )}
           </div>
           <button className="w-full mt-6 py-2 rounded-xl border border-border text-xs font-bold hover:bg-white/5 transition-all">View All Activity</button>
         </div>

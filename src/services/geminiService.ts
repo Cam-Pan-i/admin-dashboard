@@ -8,18 +8,20 @@ const getAI = () => {
   return new GoogleGenAI({ apiKey });
 };
 
-export const generateResponse = async (prompt: string) => {
+export const generateResponse = async (prompt: string, systemInstruction?: string) => {
   try {
     const ai = getAI();
     if (!process.env.GEMINI_API_KEY) {
       return "I'm sorry, the AI Assistant is currently unavailable because the API key is missing. Please configure your GEMINI_API_KEY in the Secrets panel.";
     }
 
+    const defaultInstruction = "You are Bob, an elite Discord bot management AI assistant. You help server owners and moderators manage their communities, configure bot settings, and analyze server metrics. Be professional, concise, and helpful. Use a slightly futuristic, tech-focused tone.";
+
     const response = await ai.models.generateContent({
       model: "gemini-3-flash-preview",
       contents: prompt,
       config: {
-        systemInstruction: "You are Bob, an elite Discord bot management AI assistant. You help server owners and moderators manage their communities, configure bot settings, and analyze server metrics. Be professional, concise, and helpful. Use a slightly futuristic, tech-focused tone.",
+        systemInstruction: systemInstruction || defaultInstruction,
       },
     });
 

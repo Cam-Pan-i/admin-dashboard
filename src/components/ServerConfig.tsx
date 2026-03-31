@@ -76,13 +76,13 @@ export const ServerConfig = () => {
           <h1 className="text-4xl font-bold tracking-tight">Server Configuration</h1>
           <p className="text-text-secondary">Fine-tune your bot's identity and core server settings.</p>
         </div>
-        <div className="flex items-center gap-2 p-1 bg-bg-secondary rounded-xl border border-border overflow-x-auto max-w-full">
+        <div className="flex items-center gap-2 p-1 bg-bg-secondary rounded-xl border border-border overflow-x-auto custom-scrollbar max-w-full">
           {['identity', 'permissions', 'modules', 'alerts', 'discord'].map((t) => (
             <button 
               key={t}
               onClick={() => setActiveTab(t as any)}
               className={cn(
-                "px-4 py-1.5 rounded-lg text-[10px] uppercase tracking-widest font-bold transition-all capitalize whitespace-nowrap", 
+                "px-4 py-1.5 rounded-lg text-[10px] uppercase tracking-widest font-bold transition-all capitalize whitespace-nowrap shrink-0", 
                 activeTab === t ? "bg-white text-black shadow-sm" : "text-text-secondary hover:text-text-primary"
               )}
             >
