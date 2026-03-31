@@ -45,7 +45,13 @@ export default function App() {
           setUser(session.user);
           updateRole(session.user.email);
         } else {
-          setUser(null);
+          // Preserve mock/system account sessions — only clear Supabase users
+          const currentUser = useAuthStore.getState().user;
+          if (!currentUser?.id?.startsWith('mock-id-')) {
+            setUser(null);
+          } else {
+            finishLoading();
+          }
         }
       });
 
@@ -54,7 +60,11 @@ export default function App() {
           setUser(session.user);
           updateRole(session.user.email);
         } else {
-          setUser(null);
+          // Preserve mock/system account sessions — only clear Supabase users
+          const currentUser = useAuthStore.getState().user;
+          if (!currentUser?.id?.startsWith('mock-id-')) {
+            setUser(null);
+          }
         }
       });
 
