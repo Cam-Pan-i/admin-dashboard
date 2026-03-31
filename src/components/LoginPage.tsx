@@ -6,7 +6,7 @@ import { getAccountByEmail } from '../lib/accounts';
 import { User } from '@supabase/supabase-js';
 
 export const LoginPage = () => {
-  const { setUser, setRole } = useAuthStore();
+  const { setUser, setRole, setMockSession } = useAuthStore();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [isLoading, setIsLoading] = useState(false);
@@ -19,8 +19,7 @@ export const LoginPage = () => {
 
     const normalizedEmail = email.toLowerCase().trim();
 
-    // In mock mode (no Supabase), use local test accounts only.
-    if (!isSupabaseConfigured) {
+    const tryMockLogin = () => {
       const mockAccounts: Record<string, string> = {
         'owner@example.com': 'owner',
         'admin@example.com': 'admin',
@@ -41,9 +40,19 @@ export const LoginPage = () => {
 
           setUser(mockUser);
           setRole(account.role as any);
-          setIsLoading(false);
-          return;
+          setMockSession(true);
+          return true;
         }
+      }
+
+      return false;
+    };
+
+    // In mock mode (no Supabase), use local test accounts only.
+    if (!isSupabaseConfigured) {
+      if (tryMockLogin()) {
+        setIsLoading(false);
+        return;
       }
 
       setError('Invalid mock credentials. Use owner@example.com / owner, etc.');
@@ -58,8 +67,16 @@ export const LoginPage = () => {
       });
 
       if (loginError) throw loginError;
+      setMockSession(false);
     } catch (err: any) {
       console.error('Login Error:', err);
+
+      // Testing fallback: allow local mock accounts even when Supabase is configured.
+      if (tryMockLogin()) {
+        setIsLoading(false);
+        return;
+      }
+
       if (err.message?.includes('Failed to fetch')) {
         setError('Network error: Unable to connect to authentication service. Please check your internet connection or Supabase configuration.');
       } else {

@@ -26,7 +26,7 @@ const queryClient = new QueryClient();
 
 export default function App() {
   const [activeTab, setActiveTab] = useState('dashboard');
-  const { user, setUser, setRole, isLoading, finishLoading } = useAuthStore();
+  const { user, setUser, setRole, isLoading, finishLoading, isMockSession, setMockSession } = useAuthStore();
 
   useEffect(() => {
     const updateRole = (email: string | undefined) => {
@@ -41,16 +41,22 @@ export default function App() {
 
     if (isSupabaseConfigured) {
       supabase.auth.getSession().then(({ data: { session } }) => {
-        setUser(session?.user ?? null);
         if (session?.user) {
+          setUser(session.user);
+          setMockSession(false);
           updateRole(session.user.email);
+        } else if (!isMockSession) {
+          setUser(null);
         }
       });
 
       const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
-        setUser(session?.user ?? null);
         if (session?.user) {
+          setUser(session.user);
+          setMockSession(false);
           updateRole(session.user.email);
+        } else if (!isMockSession) {
+          setUser(null);
         }
       });
 
@@ -59,7 +65,7 @@ export default function App() {
       // In mock mode, we only need to stop the initial loading state.
       finishLoading();
     }
-  }, [setUser, setRole, finishLoading]);
+  }, [setUser, setRole, finishLoading, isMockSession, setMockSession]);
 
   if (isLoading) {
     return (
