@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { Zap, Lock, ShoppingCart, X, AlertTriangle } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { PublicNavbar } from './PublicNavbar';
@@ -78,6 +78,7 @@ export const ShopPage = () => {
   const [payInfo, setPayInfo] = useState<{ amount: string; address: string; invoiceId: string } | null>(null);
   const [payStatus, setPayStatus] = useState('Waiting for network...');
   const [isCreatingInvoice, setIsCreatingInvoice] = useState(false);
+  const pollerRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
   const updateStock = useCallback(async () => {
     try {
@@ -112,10 +113,20 @@ export const ShopPage = () => {
   };
 
   const closeCheckout = () => {
+    if (pollerRef.current) {
+      clearInterval(pollerRef.current);
+      pollerRef.current = null;
+    }
     setCheckoutOpen(false);
     setCheckoutItem(null);
     setPayInfo(null);
   };
+
+  useEffect(() => {
+    return () => {
+      if (pollerRef.current) clearInterval(pollerRef.current);
+    };
+  }, []);
 
   const createInvoice = async () => {
     if (!/^\d{17,20}$/.test(discordId)) {
@@ -160,7 +171,7 @@ export const ShopPage = () => {
   };
 
   const pollPayment = (invoiceId: string) => {
-    const poller = setInterval(async () => {
+    pollerRef.current = setInterval(async () => {
       try {
         const resp = await fetch(`https://api.nowpayments.io/v1/payment/${invoiceId}`, {
           headers: { 'x-api-key': (window as any).CONFIG?.NOWPAYMENTS_API_KEY || '' },
@@ -169,8 +180,11 @@ export const ShopPage = () => {
         const status = (resp.payment_status || 'waiting').toUpperCase();
         setPayStatus(status);
 
-        if (status === 'FINISHED' || status === 'CONFIRMED' || status === 'PARTIALLY_PAID') {
-          clearInterval(poller);
+        if (status === 'FINISHED' || status === 'CONFIRMED') {
+          if (pollerRef.current) {
+            clearInterval(pollerRef.current);
+            pollerRef.current = null;
+          }
 
           await supabase.from('bot_control').insert({
             guild_id: (window as any).CONFIG?.GUILD_ID || '',
@@ -187,7 +201,10 @@ export const ShopPage = () => {
           alert('Matrix Confirmed! Your item is being retrieved and will be delivered via Discord DM in seconds.');
           closeCheckout();
         } else if (status === 'EXPIRED' || status === 'FAILED') {
-          clearInterval(poller);
+          if (pollerRef.current) {
+            clearInterval(pollerRef.current);
+            pollerRef.current = null;
+          }
           alert('Payment failed or expired.');
           closeCheckout();
         }
