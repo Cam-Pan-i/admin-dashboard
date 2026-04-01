@@ -1,2 +1,2 @@
-import server from './server.ts';
+import server from './server.js';
 export default server;
