@@ -18,6 +18,7 @@ import { PublicShop } from './components/PublicShop';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Bot } from 'lucide-react';
+import { cn } from './lib/utils';
 
 import { useAuthStore } from './store/useAuthStore';
 import { LoginPage } from './components/LoginPage';
@@ -29,11 +30,25 @@ const queryClient = new QueryClient();
 
 export default function App() {
   const [activeTab, setActiveTab] = useState('dashboard');
+  const [currentPath, setCurrentPath] = useState(typeof window !== 'undefined' ? window.location.pathname : '/');
   const { user, setUser, setRole, isLoading, signOut } = useAuthStore();
   const [isHydrated, setIsHydrated] = useState(false);
 
-  const path = typeof window !== 'undefined' ? window.location.pathname : '';
-  const isPublicPath = ['/main', '/shop', '/callback'].includes(path);
+  const isPublicPath = ['/main', '/shop', '/callback'].includes(currentPath);
+
+  useEffect(() => {
+    const handlePopState = () => {
+      const path = window.location.pathname;
+      setCurrentPath(path);
+      if (path === '/main') setActiveTab('home');
+      else if (path === '/shop') setActiveTab('public-shop');
+      else if (path === '/callback') setActiveTab('callback');
+      else setActiveTab('dashboard');
+    };
+
+    window.addEventListener('popstate', handlePopState);
+    return () => window.removeEventListener('popstate', handlePopState);
+  }, []);
 
   // Handle Zustand hydration
   useEffect(() => {
@@ -54,9 +69,11 @@ export default function App() {
 
     // Handle initial public path routing
     const path = window.location.pathname;
+    setCurrentPath(path);
     if (path === '/main') setActiveTab('home');
     else if (path === '/shop') setActiveTab('public-shop');
     else if (path === '/callback') setActiveTab('callback');
+    else setActiveTab('dashboard'); // Default to dashboard for root
 
     const updateRole = (email: string | undefined) => {
       const account = getAccountByEmail(email);
@@ -109,20 +126,21 @@ export default function App() {
 
   const handleTabChange = (tab: string) => {
     setActiveTab(tab);
-    // Only update URL for public paths if we are navigating to them
+    
     const publicPaths: Record<string, string> = {
       'home': '/main',
       'public-shop': '/shop',
       'callback': '/callback'
     };
-    
+
     if (publicPaths[tab]) {
       window.history.pushState({}, '', publicPaths[tab]);
+      setCurrentPath(publicPaths[tab]);
     } else {
-      // For dashboard tabs, keep it pathless (root)
       if (window.location.pathname !== '/') {
         window.history.pushState({}, '', '/');
       }
+      setCurrentPath('/');
     }
   };
 
@@ -169,13 +187,16 @@ export default function App() {
     }
   };
 
-  // Public Routes (No Login Required) - Only if NOT logged in
-  if (isPublicPath && !user) {
+  // Public Routes (No Login Required)
+  if (isPublicPath) {
     const isFullPage = activeTab === 'callback';
     
-    if (isFullPage) {
-      return (
-        <div className="min-h-screen bg-bg-primary text-text-primary selection:bg-white/30 p-8">
+    return (
+      <QueryClientProvider client={queryClient}>
+        <div className={cn(
+          "min-h-screen bg-bg-primary text-text-primary selection:bg-white/30",
+          isFullPage ? "p-8" : ""
+        )}>
           <AnimatePresence mode="wait">
             <motion.div
               key={activeTab}
@@ -183,34 +204,11 @@ export default function App() {
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, y: -10 }}
               transition={{ duration: 0.2 }}
+              className={!isFullPage ? "max-w-7xl mx-auto p-4 md:p-8" : ""}
             >
               {renderContent()}
             </motion.div>
           </AnimatePresence>
-        </div>
-      );
-    }
-
-    return (
-      <QueryClientProvider client={queryClient}>
-        <div className="flex min-h-screen bg-bg-primary text-text-primary selection:bg-white/30">
-          <div className="flex-1 flex flex-col min-w-0">
-            <main className="flex-1 p-4 md:p-8 overflow-y-auto custom-scrollbar">
-              <div className="max-w-7xl mx-auto">
-                <AnimatePresence mode="wait">
-                  <motion.div
-                    key={activeTab}
-                    initial={{ opacity: 0, y: 10 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    exit={{ opacity: 0, y: -10 }}
-                    transition={{ duration: 0.2 }}
-                  >
-                    {renderContent()}
-                  </motion.div>
-                </AnimatePresence>
-              </div>
-            </main>
-          </div>
         </div>
       </QueryClientProvider>
     );
