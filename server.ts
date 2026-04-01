@@ -284,6 +284,57 @@ async function startServer() {
     }
   });
 
+  app.get("/api/callback", async (req, res) => {
+    const { code, access_token } = req.query;
+    
+    if (access_token) {
+      // If we got an access token directly (implicit flow or Supabase)
+      // We can just redirect to the dashboard
+      return res.redirect("/#access_token=" + access_token);
+    }
+
+    if (!code) {
+      return res.redirect("/callback?error=no_code_provided");
+    }
+
+    const clientId = process.env.DISCORD_CLIENT_ID;
+    const clientSecret = process.env.DISCORD_CLIENT_SECRET;
+    const appUrl = process.env.APP_URL || `http://localhost:${PORT}`;
+    const redirectUri = `${appUrl}/callback`;
+
+    try {
+      const tokenResponse = await fetch("https://discord.com/api/oauth2/token", {
+        method: "POST",
+        body: new URLSearchParams({
+          client_id: clientId || "",
+          client_secret: clientSecret || "",
+          grant_type: "authorization_code",
+          code: code as string,
+          redirect_uri: redirectUri,
+        }),
+        headers: {
+          "Content-Type": "application/x-www-form-urlencoded",
+        },
+      });
+
+      const tokenData = await tokenResponse.json();
+      if (tokenData.error) {
+        console.error("Discord token exchange error:", tokenData);
+        return res.redirect(`/callback?error=${tokenData.error}`);
+      }
+
+      // Redirect to dashboard with the access token in the hash so Supabase or our app can pick it up
+      res.redirect(`/#access_token=${tokenData.access_token}`);
+    } catch (error) {
+      console.error("Callback processing error:", error);
+      res.redirect("/callback?error=server_error");
+    }
+  });
+
+  app.get("/api/health", (req, res) => {
+    res.json({ status: "ok", timestamp: new Date().toISOString() });
+  });
+
   // Vite middleware for development
   if (process.env.NODE_ENV !== "production") {
     const vite = await createViteServer({
@@ -293,14 +344,17 @@ async function startServer() {
     app.use(vite.middlewares);
 
     // SPA fallback for development
-    app.use('*', async (req, res, next) => {
+    app.get('*', async (req, res, next) => {
       const url = req.originalUrl;
+      
+      // Skip API routes
+      if (url.startsWith('/api/')) {
+        return next();
+      }
+
       try {
-        // Read index.html
         let template = fs.readFileSync(path.resolve(__dirname, 'index.html'), 'utf-8');
-        // Apply Vite HTML transforms
         template = await vite.transformIndexHtml(url, template);
-        // Send the transformed HTML
         res.status(200).set({ 'Content-Type': 'text/html' }).end(template);
       } catch (e) {
         vite.ssrFixStacktrace(e as Error);
