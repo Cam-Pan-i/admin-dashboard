@@ -88,7 +88,7 @@ export const MainHome: React.FC<MainHomeProps> = ({ setActiveTab }) => {
   }, []);
 
   const quickLinks = [
-    { id: 'shop', label: 'Shop', icon: ShoppingCart },
+    { id: 'public-shop', label: 'Marketplace', icon: ShoppingCart },
     { id: 'members', label: 'Registry', icon: Users },
     { id: 'analytics', label: 'Live Status', icon: BarChart3 },
     { id: 'tickets', label: 'Assistance', icon: Mail },

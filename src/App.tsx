@@ -32,6 +32,9 @@ export default function App() {
   const { user, setUser, setRole, isLoading, signOut } = useAuthStore();
   const [isHydrated, setIsHydrated] = useState(false);
 
+  const path = typeof window !== 'undefined' ? window.location.pathname : '';
+  const isPublicPath = ['/main', '/shop', '/callback'].includes(path);
+
   // Handle Zustand hydration
   useEffect(() => {
     const unsub = useAuthStore.persist.onFinishHydration(() => {
@@ -49,14 +52,11 @@ export default function App() {
   useEffect(() => {
     if (!isHydrated) return;
 
-    // Handle path-based routing
+    // Handle initial public path routing
     const path = window.location.pathname;
-    if (path === '/main' || path === '/') {
-      setActiveTab('home');
-      if (path === '/') window.history.replaceState({}, '', '/main');
-    }
-    else if (path === '/callback') setActiveTab('callback');
+    if (path === '/main') setActiveTab('home');
     else if (path === '/shop') setActiveTab('public-shop');
+    else if (path === '/callback') setActiveTab('callback');
 
     const updateRole = (email: string | undefined) => {
       const account = getAccountByEmail(email);
@@ -107,14 +107,29 @@ export default function App() {
     );
   }
 
-  if (!user) {
-    return <LoginPage />;
-  }
+  const handleTabChange = (tab: string) => {
+    setActiveTab(tab);
+    // Only update URL for public paths if we are navigating to them
+    const publicPaths: Record<string, string> = {
+      'home': '/main',
+      'public-shop': '/shop',
+      'callback': '/callback'
+    };
+    
+    if (publicPaths[tab]) {
+      window.history.pushState({}, '', publicPaths[tab]);
+    } else {
+      // For dashboard tabs, keep it pathless (root)
+      if (window.location.pathname !== '/') {
+        window.history.pushState({}, '', '/');
+      }
+    }
+  };
 
   const renderContent = () => {
     switch (activeTab) {
       case 'home':
-        return <MainHome setActiveTab={setActiveTab} />;
+        return <MainHome setActiveTab={handleTabChange} />;
       case 'callback':
         return <AuthCallback />;
       case 'public-shop':
@@ -154,37 +169,57 @@ export default function App() {
     }
   };
 
-  const isFullPage = activeTab === 'callback';
+  // Public Routes (No Login Required) - Only if NOT logged in
+  if (isPublicPath && !user) {
+    const isFullPage = activeTab === 'callback';
+    
+    if (isFullPage) {
+      return (
+        <div className="min-h-screen bg-bg-primary text-text-primary selection:bg-white/30 p-8">
+          <AnimatePresence mode="wait">
+            <motion.div
+              key={activeTab}
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -10 }}
+              transition={{ duration: 0.2 }}
+            >
+              {renderContent()}
+            </motion.div>
+          </AnimatePresence>
+        </div>
+      );
+    }
 
-  if (isFullPage) {
     return (
-      <div className="min-h-screen bg-bg-primary text-text-primary selection:bg-white/30 p-8">
-        <AnimatePresence mode="wait">
-          <motion.div
-            key={activeTab}
-            initial={{ opacity: 0, y: 10 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: -10 }}
-            transition={{ duration: 0.2 }}
-          >
-            {renderContent()}
-          </motion.div>
-        </AnimatePresence>
-      </div>
+      <QueryClientProvider client={queryClient}>
+        <div className="flex min-h-screen bg-bg-primary text-text-primary selection:bg-white/30">
+          <div className="flex-1 flex flex-col min-w-0">
+            <main className="flex-1 p-4 md:p-8 overflow-y-auto custom-scrollbar">
+              <div className="max-w-7xl mx-auto">
+                <AnimatePresence mode="wait">
+                  <motion.div
+                    key={activeTab}
+                    initial={{ opacity: 0, y: 10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    exit={{ opacity: 0, y: -10 }}
+                    transition={{ duration: 0.2 }}
+                  >
+                    {renderContent()}
+                  </motion.div>
+                </AnimatePresence>
+              </div>
+            </main>
+          </div>
+        </div>
+      </QueryClientProvider>
     );
   }
 
-  const handleTabChange = (tab: string) => {
-    setActiveTab(tab);
-    const pathMap: Record<string, string> = {
-      'home': '/main',
-      'callback': '/callback',
-      'public-shop': '/shop',
-      'dashboard': '/dashboard'
-    };
-    const newPath = pathMap[tab] || `/${tab}`;
-    window.history.pushState({}, '', newPath);
-  };
+  // Protected Routes (Login Required)
+  if (!user) {
+    return <LoginPage />;
+  }
 
   return (
     <QueryClientProvider client={queryClient}>
