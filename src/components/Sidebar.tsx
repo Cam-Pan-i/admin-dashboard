@@ -1,13 +1,11 @@
 import React, { useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { 
-  Home,
   LayoutDashboard, 
   Users, 
   Ticket, 
   ShieldCheck, 
   Package, 
-  ShoppingCart,
   Shield, 
   BarChart3, 
   Settings,
