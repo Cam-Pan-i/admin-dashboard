@@ -207,7 +207,7 @@ export const Dashboard = () => {
             {loadingLogs && logs.length === 0 ? (
               <div className="py-10 flex flex-col items-center justify-center gap-3">
                 <Loader2 size={24} className="animate-spin text-white/20" />
-                <p className="text-[10px] font-bold uppercase tracking-widest text-text-secondary">Syncing logs...</p>
+                <p className="text-[10px] font-bold uppercase tracking-wider text-text-secondary">Syncing logs...</p>
               </div>
             ) : logs.map((log) => (
               <div key={log.id} className="flex items-center gap-3 p-3 rounded-xl hover:bg-white/5 transition-colors group cursor-pointer">
@@ -264,15 +264,15 @@ export const Dashboard = () => {
           </div>
           <div className="grid grid-cols-3 gap-8 w-full pt-4">
             <div>
-              <p className="text-text-secondary text-[10px] uppercase font-bold tracking-widest">Latency</p>
+              <p className="text-text-secondary text-[10px] uppercase font-bold tracking-wider">Latency</p>
               <p className="text-lg font-bold text-white">24ms</p>
             </div>
             <div>
-              <p className="text-text-secondary text-[10px] uppercase font-bold tracking-widest">Uptime</p>
+              <p className="text-text-secondary text-[10px] uppercase font-bold tracking-wider">Uptime</p>
               <p className="text-lg font-bold text-white">99.9%</p>
             </div>
             <div>
-              <p className="text-text-secondary text-[10px] uppercase font-bold tracking-widest">RAM</p>
+              <p className="text-text-secondary text-[10px] uppercase font-bold tracking-wider">RAM</p>
               <p className="text-lg font-bold text-white">1.2GB</p>
             </div>
           </div>

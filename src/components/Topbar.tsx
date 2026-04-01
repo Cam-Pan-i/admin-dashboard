@@ -28,7 +28,7 @@ export const Topbar = () => {
               BS
             </div>
             <div className="flex flex-col">
-              <span className="text-[11px] font-black uppercase tracking-widest leading-none">BOB'S EMPORIUM</span>
+              <span className="text-[11px] font-black uppercase tracking-wider leading-none">BOB'S EMPORIUM</span>
               <span className="text-[9px] text-text-secondary font-bold mt-0.5">PRODUCTION INSTANCE</span>
             </div>
             <ChevronDown size={12} className="text-text-secondary group-hover:text-white transition-colors ml-2" />
@@ -49,7 +49,7 @@ export const Topbar = () => {
           <input 
             type="text" 
             placeholder="COMMAND SEARCH..." 
-            className="bg-white/[0.02] border border-white/[0.05] rounded-lg pl-11 pr-14 py-2.5 text-[10px] font-bold tracking-widest w-72 focus:outline-none focus:border-white/20 focus:ring-0 transition-all placeholder:text-text-secondary/50 uppercase"
+            className="bg-white/[0.02] border border-white/[0.05] rounded-lg pl-11 pr-14 py-2.5 text-[10px] font-bold tracking-wider w-72 focus:outline-none focus:border-white/20 focus:ring-0 transition-all placeholder:text-text-secondary/50 uppercase"
           />
           <div className="absolute right-4 top-1/2 -translate-y-1/2 flex items-center gap-1 px-1.5 py-1 rounded border border-white/10 bg-white/5 text-[9px] font-black text-text-secondary">
             <Command size={10} /> K

@@ -143,7 +143,7 @@ export const MembersMatrix = () => {
                 <div className="flex flex-col sm:flex-row sm:items-end gap-6 mb-8">
                   <div className="w-24 h-24 rounded-xl bg-bg-tertiary border border-white/20 overflow-hidden shadow-2xl relative group">
                     <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent opacity-0 group-hover:opacity-100 transition-opacity flex items-end justify-center pb-2">
-                      <span className="text-[8px] font-bold uppercase tracking-widest text-white/80">View Profile</span>
+                      <span className="text-[8px] font-bold uppercase tracking-wider text-white/80">View Profile</span>
                     </div>
                     <img 
                       src={selectedMember.avatar || `https://api.dicebear.com/7.x/avataaars/svg?seed=${selectedMember.username}`} 
@@ -166,7 +166,7 @@ export const MembersMatrix = () => {
                         selectedMember.status === 'idle' ? "bg-yellow-500/50" : "bg-white/10"
                       )}></div>
                     </div>
-                    <p className="text-text-secondary font-mono text-[10px] tracking-widest uppercase opacity-60">Matrix ID: {selectedMember.id}</p>
+                    <p className="text-text-secondary font-mono text-[10px] tracking-wider uppercase opacity-60">Matrix ID: {selectedMember.id}</p>
                   </div>
                 </div>
 
@@ -218,11 +218,11 @@ export const MembersMatrix = () => {
                       <h3 className="text-[9px] font-bold uppercase tracking-[0.2em] text-text-secondary">Operational Metrics</h3>
                       <div className="grid grid-cols-2 gap-4">
                         <div className="space-y-1">
-                          <p className="text-[8px] font-bold uppercase tracking-widest text-text-secondary">Comm Volume</p>
+                          <p className="text-[8px] font-bold uppercase tracking-wider text-text-secondary">Comm Volume</p>
                           <p className="text-xl font-bold font-mono tracking-tighter">{(selectedMember.messages || 0).toLocaleString()}</p>
                         </div>
                         <div className="space-y-1">
-                          <p className="text-[8px] font-bold uppercase tracking-widest text-text-secondary">Infractions</p>
+                          <p className="text-[8px] font-bold uppercase tracking-wider text-text-secondary">Infractions</p>
                           <p className={cn(
                             "text-xl font-bold font-mono tracking-tighter",
                             (selectedMember.modHistory || 0) > 0 ? "text-red-400" : "text-text-secondary"
@@ -232,13 +232,13 @@ export const MembersMatrix = () => {
                     </div>
 
                     <div className="space-y-2">
-                      <button className="w-full py-2.5 rounded-lg bg-white text-black font-bold text-[10px] uppercase tracking-widest hover:bg-white/90 transition-all flex items-center justify-center gap-2 shadow-[0_0_15px_rgba(255,255,255,0.1)]">
+                      <button className="w-full py-2.5 rounded-lg bg-white text-black font-bold text-[10px] uppercase tracking-wider hover:bg-white/90 transition-all flex items-center justify-center gap-2 shadow-[0_0_15px_rgba(255,255,255,0.1)]">
                         <MessageSquare size={14} />
                         Establish Comms
                       </button>
                       <button 
                         onClick={() => setIsBackgroundModalOpen(true)}
-                        className="w-full py-2.5 rounded-lg glass border border-white/10 text-white font-bold text-[10px] uppercase tracking-widest hover:bg-white/10 transition-all flex items-center justify-center gap-2"
+                        className="w-full py-2.5 rounded-lg glass border border-white/10 text-white font-bold text-[10px] uppercase tracking-wider hover:bg-white/10 transition-all flex items-center justify-center gap-2"
                       >
                         <Database size={14} className="text-blue-400" />
                         Deep Scan Background
@@ -262,10 +262,10 @@ export const MembersMatrix = () => {
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
           <h1 className="text-4xl font-bold tracking-tighter uppercase italic">Members Matrix</h1>
-          <p className="text-text-secondary text-xs font-mono tracking-widest uppercase opacity-60">Personnel Database & Community Intelligence</p>
+          <p className="text-text-secondary text-xs font-mono tracking-wider uppercase opacity-60">Personnel Database & Community Intelligence</p>
         </div>
         <div className="flex items-center gap-3">
-          <button className="flex items-center gap-2 px-4 py-2 rounded-lg bg-white text-black font-bold text-[10px] uppercase tracking-widest hover:bg-white/90 transition-all shadow-[0_0_15px_rgba(255,255,255,0.1)]">
+          <button className="flex items-center gap-2 px-4 py-2 rounded-lg bg-white text-black font-bold text-[10px] uppercase tracking-wider hover:bg-white/90 transition-all shadow-[0_0_15px_rgba(255,255,255,0.1)]">
             <UserPlus size={16} />
             Invite Personnel
           </button>
@@ -283,14 +283,14 @@ export const MembersMatrix = () => {
             placeholder="SEARCH BY USERNAME OR ID..." 
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            className="w-full bg-white/5 border border-white/10 rounded-lg pl-10 pr-4 py-2.5 text-[10px] font-mono tracking-widest uppercase focus:outline-none focus:border-white/30 transition-all placeholder:text-white/20"
+            className="w-full bg-white/5 border border-white/10 rounded-lg pl-10 pr-4 py-2.5 text-[10px] font-mono tracking-wider uppercase focus:outline-none focus:border-white/30 transition-all placeholder:text-white/20"
           />
         </div>
-        <button className="flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg glass border border-white/10 text-[10px] font-bold uppercase tracking-widest hover:bg-white/10 transition-all">
+        <button className="flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg glass border border-white/10 text-[10px] font-bold uppercase tracking-wider hover:bg-white/10 transition-all">
           <Filter size={16} />
           Filters
         </button>
-        <div className="flex items-center justify-between px-4 py-2.5 rounded-lg glass border border-white/10 text-[10px] font-mono uppercase tracking-widest">
+        <div className="flex items-center justify-between px-4 py-2.5 rounded-lg glass border border-white/10 text-[10px] font-mono uppercase tracking-wider">
           <span className="text-text-secondary">Active: <span className="text-white">8</span> / 12,482</span>
         </div>
       </div>
@@ -305,8 +305,8 @@ export const MembersMatrix = () => {
           ) : error ? (
             <div className="p-12 flex flex-col items-center justify-center gap-4 text-center">
               <AlertCircle size={24} className="text-red-400" />
-              <p className="text-[10px] font-mono uppercase tracking-widest text-text-secondary">{error}</p>
-              <button onClick={fetchMembers} className="px-6 py-2 rounded-lg bg-white text-black font-bold text-[10px] uppercase tracking-widest">Retry Sync</button>
+              <p className="text-[10px] font-mono uppercase tracking-wider text-text-secondary">{error}</p>
+              <button onClick={fetchMembers} className="px-6 py-2 rounded-lg bg-white text-black font-bold text-[10px] uppercase tracking-wider">Retry Sync</button>
             </div>
           ) : (
             <table className="w-full text-left border-collapse">
@@ -336,7 +336,7 @@ export const MembersMatrix = () => {
                           <p className="text-xs font-bold group-hover:text-white transition-colors uppercase tracking-tight">
                             {member.nickname || member.username.split('#')[0]}
                           </p>
-                          <p className="text-[8px] text-text-secondary font-mono uppercase tracking-widest opacity-60">ID: {member.id.substring(0, 8)}</p>
+                          <p className="text-[8px] text-text-secondary font-mono uppercase tracking-wider opacity-60">ID: {member.id.substring(0, 8)}</p>
                         </div>
                       </div>
                     </td>
@@ -347,7 +347,7 @@ export const MembersMatrix = () => {
                           member.status === 'online' ? "bg-green-500 shadow-[0_0_5px_rgba(34,197,94,0.5)]" : 
                           member.status === 'idle' ? "bg-yellow-500/50" : "bg-white/10"
                         )}></div>
-                        <span className="text-[10px] uppercase font-bold tracking-widest text-text-secondary">{member.status}</span>
+                        <span className="text-[10px] uppercase font-bold tracking-wider text-text-secondary">{member.status}</span>
                       </div>
                     </td>
                     <td className="px-6 py-4">
@@ -405,7 +405,7 @@ export const MembersMatrix = () => {
                 <button 
                   key={i} 
                   className={cn(
-                    "w-7 h-7 rounded-md text-[9px] font-bold transition-all uppercase tracking-widest",
+                    "w-7 h-7 rounded-md text-[9px] font-bold transition-all uppercase tracking-wider",
                     p === 1 ? "bg-white text-black" : "hover:bg-white/10 text-text-secondary"
                   )}
                 >

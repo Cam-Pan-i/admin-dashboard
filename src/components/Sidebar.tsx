@@ -83,7 +83,7 @@ export const Sidebar = ({ activeTab, setActiveTab }: { activeTab: string, setAct
                 className="flex flex-col"
               >
                 <span className="font-black text-sm tracking-[0.2em] leading-none">BOB</span>
-                <span className="text-[10px] text-text-secondary font-bold tracking-widest mt-1">MASTER ADMIN</span>
+                <span className="text-[10px] text-text-secondary font-bold tracking-wider mt-1">MASTER ADMIN</span>
               </motion.div>
             )}
           </div>
@@ -129,7 +129,7 @@ export const Sidebar = ({ activeTab, setActiveTab }: { activeTab: string, setAct
                 <motion.span 
                   initial={{ opacity: 0 }}
                   animate={{ opacity: 1 }}
-                  className="font-bold text-[11px] uppercase tracking-widest z-10"
+                  className="font-bold text-[11px] uppercase tracking-wider z-10"
                 >
                   {item.label}
                 </motion.span>
@@ -155,7 +155,7 @@ export const Sidebar = ({ activeTab, setActiveTab }: { activeTab: string, setAct
                 <p className="text-[11px] font-black truncate tracking-wider uppercase">{user?.email?.split('@')[0]}</p>
                 <div className="flex items-center gap-1.5 mt-0.5">
                   <div className="w-1 h-1 rounded-full bg-emerald-500 animate-pulse" />
-                  <p className="text-[9px] text-text-secondary truncate uppercase font-bold tracking-widest">{role}</p>
+                  <p className="text-[9px] text-text-secondary truncate uppercase font-bold tracking-wider">{role}</p>
                 </div>
               </div>
             )}

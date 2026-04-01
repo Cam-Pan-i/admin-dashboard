@@ -82,7 +82,7 @@ export const ServerConfig = () => {
               key={t}
               onClick={() => setActiveTab(t as any)}
               className={cn(
-                "px-4 py-1.5 rounded-lg text-[10px] uppercase tracking-widest font-bold transition-all capitalize whitespace-nowrap shrink-0", 
+                "px-4 py-1.5 rounded-lg text-[10px] uppercase tracking-wider font-bold transition-all capitalize whitespace-nowrap shrink-0", 
                 activeTab === t ? "bg-white text-black shadow-sm" : "text-text-secondary hover:text-text-primary"
               )}
             >
@@ -100,12 +100,12 @@ export const ServerConfig = () => {
                 <div className="p-2 rounded-lg bg-white/5 text-white">
                   <Bot size={20} />
                 </div>
-                <h3 className="font-bold text-sm uppercase tracking-widest">Bot Identity</h3>
+                <h3 className="font-bold text-sm uppercase tracking-wider">Bot Identity</h3>
               </div>
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div className="space-y-2">
-                  <label className="text-[10px] font-bold text-text-secondary uppercase tracking-widest">Bot Name</label>
+                  <label className="text-[10px] font-bold text-text-secondary uppercase tracking-wider">Bot Name</label>
                   <input 
                     type="text" 
                     defaultValue="Bob The Seller"
@@ -113,7 +113,7 @@ export const ServerConfig = () => {
                   />
                 </div>
                 <div className="space-y-2">
-                  <label className="text-[10px] font-bold text-text-secondary uppercase tracking-widest">Command Prefix</label>
+                  <label className="text-[10px] font-bold text-text-secondary uppercase tracking-wider">Command Prefix</label>
                   <input 
                     type="text" 
                     defaultValue="/"
@@ -124,7 +124,7 @@ export const ServerConfig = () => {
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div className="space-y-2">
-                  <label className="text-[10px] font-bold text-text-secondary uppercase tracking-widest">Status</label>
+                  <label className="text-[10px] font-bold text-text-secondary uppercase tracking-wider">Status</label>
                   <select className="w-full bg-bg-tertiary border border-border rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:border-white/50 text-text-primary">
                     <option>Online</option>
                     <option>Idle</option>
@@ -133,7 +133,7 @@ export const ServerConfig = () => {
                   </select>
                 </div>
                 <div className="space-y-2">
-                  <label className="text-[10px] font-bold text-text-secondary uppercase tracking-widest">Activity Type</label>
+                  <label className="text-[10px] font-bold text-text-secondary uppercase tracking-wider">Activity Type</label>
                   <select className="w-full bg-bg-tertiary border border-border rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:border-white/50 text-text-primary">
                     <option>Playing</option>
                     <option>Watching</option>
@@ -144,7 +144,7 @@ export const ServerConfig = () => {
               </div>
 
               <div className="space-y-2">
-                <label className="text-[10px] font-bold text-text-secondary uppercase tracking-widest">Activity Text</label>
+                <label className="text-[10px] font-bold text-text-secondary uppercase tracking-wider">Activity Text</label>
                 <input 
                   type="text" 
                   defaultValue="with your orders | /help"
@@ -153,11 +153,11 @@ export const ServerConfig = () => {
               </div>
 
               <div className="pt-4 border-t border-border flex items-center justify-between">
-                <div className="flex items-center gap-2 text-[10px] text-text-secondary uppercase tracking-widest">
+                <div className="flex items-center gap-2 text-[10px] text-text-secondary uppercase tracking-wider">
                   <RefreshCw size={14} className="animate-spin-slow" />
                   Last updated 2 hours ago
                 </div>
-                <button className="px-6 py-2.5 rounded-xl bg-white text-black font-bold text-[10px] uppercase tracking-widest hover:bg-white/90 transition-all">
+                <button className="px-6 py-2.5 rounded-xl bg-white text-black font-bold text-[10px] uppercase tracking-wider hover:bg-white/90 transition-all">
                   Update Identity
                 </button>
               </div>
@@ -170,15 +170,15 @@ export const ServerConfig = () => {
                     <Power size={24} />
                   </div>
                   <div>
-                    <h3 className="font-bold text-sm uppercase tracking-widest">System Control</h3>
+                    <h3 className="font-bold text-sm uppercase tracking-wider">System Control</h3>
                     <p className="text-xs text-text-secondary">Restart the bot process or clear cache.</p>
                   </div>
                 </div>
                 <div className="flex gap-3">
-                  <button className="px-4 py-2 rounded-xl bg-bg-tertiary border border-border text-[10px] font-bold uppercase tracking-widest hover:bg-white/5 transition-all">
+                  <button className="px-4 py-2 rounded-xl bg-bg-tertiary border border-border text-[10px] font-bold uppercase tracking-wider hover:bg-white/5 transition-all">
                     Clear Cache
                   </button>
-                  <button className="px-4 py-2 rounded-xl bg-white text-black text-[10px] font-bold uppercase tracking-widest hover:bg-white/90 transition-all">
+                  <button className="px-4 py-2 rounded-xl bg-white text-black text-[10px] font-bold uppercase tracking-wider hover:bg-white/90 transition-all">
                     Restart Bot
                   </button>
                 </div>
@@ -188,7 +188,7 @@ export const ServerConfig = () => {
 
           <div className="space-y-6">
             <div className="glass p-6 rounded-2xl border border-border">
-              <h3 className="font-bold text-[10px] uppercase tracking-widest text-text-secondary mb-6">Bot Preview</h3>
+              <h3 className="font-bold text-[10px] uppercase tracking-wider text-text-secondary mb-6">Bot Preview</h3>
               <div className="bg-[#0a0a0a] border border-white/10 rounded-xl p-4 shadow-xl">
                 <div className="flex items-center gap-3">
                   <div className="relative">
@@ -202,14 +202,14 @@ export const ServerConfig = () => {
                       <span className="text-white font-bold text-sm">Bob The Seller</span>
                       <span className="bg-white/10 text-white text-[8px] font-bold px-1 py-0.5 rounded uppercase border border-white/20">Bot</span>
                     </div>
-                    <p className="text-text-secondary text-[10px] uppercase tracking-widest">Playing <span className="font-bold text-white">with your orders | /help</span></p>
+                    <p className="text-text-secondary text-[10px] uppercase tracking-wider">Playing <span className="font-bold text-white">with your orders | /help</span></p>
                   </div>
                 </div>
               </div>
             </div>
 
             <div className="glass p-6 rounded-2xl border border-border space-y-4">
-              <h3 className="font-bold text-[10px] uppercase tracking-widest text-text-secondary">Quick Toggles</h3>
+              <h3 className="font-bold text-[10px] uppercase tracking-wider text-text-secondary">Quick Toggles</h3>
               {[
                 { label: 'Public Invites', enabled: true },
                 { label: 'DM Notifications', enabled: false },
@@ -217,7 +217,7 @@ export const ServerConfig = () => {
                 { label: 'Legacy Commands', enabled: false },
               ].map((toggle, i) => (
                 <div key={i} className="flex items-center justify-between">
-                  <span className="text-[10px] uppercase tracking-widest font-medium">{toggle.label}</span>
+                  <span className="text-[10px] uppercase tracking-wider font-medium">{toggle.label}</span>
                   <div className={cn(
                     "w-10 h-5 rounded-full relative cursor-pointer transition-all",
                     toggle.enabled ? "bg-white" : "bg-bg-tertiary border border-border"
@@ -237,18 +237,18 @@ export const ServerConfig = () => {
       {activeTab === 'permissions' && (
         <div className="glass rounded-2xl border border-border overflow-hidden">
           <div className="px-8 py-6 border-b border-border bg-white/5">
-            <h3 className="font-bold text-sm uppercase tracking-widest">Permissions Matrix</h3>
+            <h3 className="font-bold text-sm uppercase tracking-wider">Permissions Matrix</h3>
             <p className="text-xs text-text-secondary">Define which roles can access specific bot modules.</p>
           </div>
           <div className="overflow-x-auto">
             <table className="w-full text-left border-collapse">
               <thead>
                 <tr className="border-b border-border">
-                  <th className="px-8 py-4 text-[10px] font-bold uppercase tracking-widest text-text-secondary">Module</th>
-                  <th className="px-6 py-4 text-[10px] font-bold uppercase tracking-widest text-text-secondary text-center">Owner</th>
-                  <th className="px-6 py-4 text-[10px] font-bold uppercase tracking-widest text-text-secondary text-center">Admin</th>
-                  <th className="px-6 py-4 text-[10px] font-bold uppercase tracking-widest text-text-secondary text-center">Moderator</th>
-                  <th className="px-6 py-4 text-[10px] font-bold uppercase tracking-widest text-text-secondary text-center">Helper</th>
+                  <th className="px-8 py-4 text-[10px] font-bold uppercase tracking-wider text-text-secondary">Module</th>
+                  <th className="px-6 py-4 text-[10px] font-bold uppercase tracking-wider text-text-secondary text-center">Owner</th>
+                  <th className="px-6 py-4 text-[10px] font-bold uppercase tracking-wider text-text-secondary text-center">Admin</th>
+                  <th className="px-6 py-4 text-[10px] font-bold uppercase tracking-wider text-text-secondary text-center">Moderator</th>
+                  <th className="px-6 py-4 text-[10px] font-bold uppercase tracking-wider text-text-secondary text-center">Helper</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-border">
@@ -264,7 +264,7 @@ export const ServerConfig = () => {
                     <td className="px-8 py-4">
                       <div className="flex items-center gap-3">
                         <row.icon size={16} className="text-text-secondary" />
-                        <span className="text-xs font-bold uppercase tracking-widest">{row.name}</span>
+                        <span className="text-xs font-bold uppercase tracking-wider">{row.name}</span>
                       </div>
                     </td>
                     {[true, true, i < 5, i < 3].map((allowed, j) => (
@@ -306,7 +306,7 @@ export const ServerConfig = () => {
                 cog.enabled ? "bg-white/5 group-hover:bg-white/10" : "bg-bg-tertiary"
               )}></div>
               <div className="flex items-center justify-between">
-                <h3 className="font-bold text-sm uppercase tracking-widest">{cog.name}</h3>
+                <h3 className="font-bold text-sm uppercase tracking-wider">{cog.name}</h3>
                 <div className={cn(
                   "w-10 h-5 rounded-full relative cursor-pointer transition-all",
                   cog.enabled ? "bg-white" : "bg-bg-tertiary border border-border"
@@ -318,7 +318,7 @@ export const ServerConfig = () => {
                 </div>
               </div>
               <p className="text-xs text-text-secondary leading-relaxed">{cog.desc}</p>
-              <button className="text-[10px] font-bold text-white uppercase tracking-widest hover:underline flex items-center gap-1">
+              <button className="text-[10px] font-bold text-white uppercase tracking-wider hover:underline flex items-center gap-1">
                 Configure Module <ChevronRight size={10} />
               </button>
             </div>
@@ -332,7 +332,7 @@ export const ServerConfig = () => {
             <div className="p-2 rounded-lg bg-white/5 text-white">
               <Bell size={20} />
             </div>
-            <h3 className="font-bold text-sm uppercase tracking-widest">Alert Routing</h3>
+            <h3 className="font-bold text-sm uppercase tracking-wider">Alert Routing</h3>
           </div>
 
           <div className="space-y-4">
@@ -349,10 +349,10 @@ export const ServerConfig = () => {
                   <div className="w-8 h-8 rounded-lg bg-bg-secondary border border-border flex items-center justify-center text-text-secondary">
                     <Zap size={14} />
                   </div>
-                  <span className="text-xs font-bold uppercase tracking-widest">{route.event}</span>
+                  <span className="text-xs font-bold uppercase tracking-wider">{route.event}</span>
                 </div>
                 <div className="flex items-center gap-3">
-                  <span className="text-[10px] text-text-secondary uppercase tracking-widest">Route to:</span>
+                  <span className="text-[10px] text-text-secondary uppercase tracking-wider">Route to:</span>
                   <select className="bg-bg-secondary border border-border rounded-lg px-3 py-1.5 text-xs focus:outline-none focus:border-white/50 text-text-primary">
                     <option>{route.channel}</option>
                     <option>#general</option>
@@ -371,7 +371,7 @@ export const ServerConfig = () => {
           {loading ? (
             <div className="glass p-12 rounded-2xl border border-border flex flex-col items-center justify-center gap-4">
               <RefreshCw size={32} className="animate-spin text-white/50" />
-              <p className="text-xs font-bold uppercase tracking-widest text-text-secondary">Fetching Discord Data...</p>
+              <p className="text-xs font-bold uppercase tracking-wider text-text-secondary">Fetching Discord Data...</p>
             </div>
           ) : error ? (
             <div className="glass p-12 rounded-2xl border border-border flex flex-col items-center justify-center gap-6 text-center">
@@ -385,11 +385,11 @@ export const ServerConfig = () => {
               <div className="flex flex-col gap-3 w-full max-w-xs">
                 <button 
                   onClick={fetchDiscordData}
-                  className="w-full py-3 rounded-xl bg-white text-black font-bold text-xs uppercase tracking-widest hover:bg-white/90 transition-all"
+                  className="w-full py-3 rounded-xl bg-white text-black font-bold text-xs uppercase tracking-wider hover:bg-white/90 transition-all"
                 >
                   Retry Connection
                 </button>
-                <p className="text-[10px] text-text-secondary uppercase tracking-widest">
+                <p className="text-[10px] text-text-secondary uppercase tracking-wider">
                   Ensure DISCORD_TOKEN and MAIN_GUILD are set in your environment.
                 </p>
               </div>
@@ -413,7 +413,7 @@ export const ServerConfig = () => {
                         <h2 className="text-2xl font-bold tracking-tight">{discordData.name}</h2>
                         <div className="flex items-center gap-2 text-text-secondary">
                           <Users size={14} />
-                          <span className="text-xs font-bold uppercase tracking-widest">{discordData.memberCount.toLocaleString()} Members</span>
+                          <span className="text-xs font-bold uppercase tracking-wider">{discordData.memberCount.toLocaleString()} Members</span>
                         </div>
                       </div>
                     </div>
@@ -424,15 +424,15 @@ export const ServerConfig = () => {
 
                   <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                     <div className="p-4 rounded-xl bg-white/5 border border-white/10 space-y-1">
-                      <p className="text-[10px] font-bold text-text-secondary uppercase tracking-widest">Server Name</p>
+                      <p className="text-[10px] font-bold text-text-secondary uppercase tracking-wider">Server Name</p>
                       <p className="text-sm font-bold">{discordData.name}</p>
                     </div>
                     <div className="p-4 rounded-xl bg-white/5 border border-white/10 space-y-1">
-                      <p className="text-[10px] font-bold text-text-secondary uppercase tracking-widest">Total Roles</p>
+                      <p className="text-[10px] font-bold text-text-secondary uppercase tracking-wider">Total Roles</p>
                       <p className="text-sm font-bold">{discordData.roles.length}</p>
                     </div>
                     <div className="p-4 rounded-xl bg-white/5 border border-white/10 space-y-1">
-                      <p className="text-[10px] font-bold text-text-secondary uppercase tracking-widest">Verification Level</p>
+                      <p className="text-[10px] font-bold text-text-secondary uppercase tracking-wider">Verification Level</p>
                       <p className="text-sm font-bold">High</p>
                     </div>
                   </div>
@@ -441,10 +441,10 @@ export const ServerConfig = () => {
                 <div className="glass rounded-2xl border border-border overflow-hidden">
                   <div className="px-8 py-6 border-b border-border bg-white/5 flex items-center justify-between">
                     <div>
-                      <h3 className="font-bold text-sm uppercase tracking-widest">Server Roles</h3>
+                      <h3 className="font-bold text-sm uppercase tracking-wider">Server Roles</h3>
                       <p className="text-xs text-text-secondary">A list of all roles available in your Discord server.</p>
                     </div>
-                    <div className="px-3 py-1 rounded-full bg-white/10 border border-white/20 text-[10px] font-bold uppercase tracking-widest">
+                    <div className="px-3 py-1 rounded-full bg-white/10 border border-white/20 text-[10px] font-bold uppercase tracking-wider">
                       {discordData.roles.length} Roles
                     </div>
                   </div>
@@ -452,9 +452,9 @@ export const ServerConfig = () => {
                     <table className="w-full text-left border-collapse">
                       <thead>
                         <tr className="border-b border-border bg-white/[0.02]">
-                          <th className="px-8 py-4 text-[10px] font-bold uppercase tracking-widest text-text-secondary">Role Name</th>
-                          <th className="px-8 py-4 text-[10px] font-bold uppercase tracking-widest text-text-secondary">ID</th>
-                          <th className="px-8 py-4 text-[10px] font-bold uppercase tracking-widest text-text-secondary text-right">Color</th>
+                          <th className="px-8 py-4 text-[10px] font-bold uppercase tracking-wider text-text-secondary">Role Name</th>
+                          <th className="px-8 py-4 text-[10px] font-bold uppercase tracking-wider text-text-secondary">ID</th>
+                          <th className="px-8 py-4 text-[10px] font-bold uppercase tracking-wider text-text-secondary text-right">Color</th>
                         </tr>
                       </thead>
                       <tbody className="divide-y divide-border">
@@ -485,11 +485,11 @@ export const ServerConfig = () => {
 
               <div className="space-y-6">
                 <div className="glass p-6 rounded-2xl border border-border space-y-4">
-                  <h3 className="font-bold text-[10px] uppercase tracking-widest text-text-secondary">Integration Status</h3>
+                  <h3 className="font-bold text-[10px] uppercase tracking-wider text-text-secondary">Integration Status</h3>
                   <div className="flex items-center justify-between p-4 rounded-xl bg-white/5 border border-white/10">
                     <div className="flex items-center gap-3">
                       <div className="w-2 h-2 rounded-full bg-white shadow-[0_0_10px_rgba(255,255,255,0.5)]"></div>
-                      <span className="text-xs font-bold uppercase tracking-widest">Connected</span>
+                      <span className="text-xs font-bold uppercase tracking-wider">Connected</span>
                     </div>
                     <span className="text-[10px] text-text-secondary font-mono">v10 API</span>
                   </div>
@@ -499,12 +499,12 @@ export const ServerConfig = () => {
                 </div>
 
                 <div className="glass p-6 rounded-2xl border border-border space-y-4">
-                  <h3 className="font-bold text-[10px] uppercase tracking-widest text-text-secondary">Quick Actions</h3>
-                  <button className="w-full py-3 rounded-xl bg-white text-black font-bold text-[10px] uppercase tracking-widest hover:bg-white/90 transition-all flex items-center justify-center gap-2">
+                  <h3 className="font-bold text-[10px] uppercase tracking-wider text-text-secondary">Quick Actions</h3>
+                  <button className="w-full py-3 rounded-xl bg-white text-black font-bold text-[10px] uppercase tracking-wider hover:bg-white/90 transition-all flex items-center justify-center gap-2">
                     <RefreshCw size={14} />
                     Sync Metadata
                   </button>
-                  <button className="w-full py-3 rounded-xl glass border border-border text-[10px] font-bold uppercase tracking-widest hover:bg-white/10 transition-all flex items-center justify-center gap-2">
+                  <button className="w-full py-3 rounded-xl glass border border-border text-[10px] font-bold uppercase tracking-wider hover:bg-white/10 transition-all flex items-center justify-center gap-2">
                     <Hash size={14} />
                     View Channels
                   </button>
@@ -513,7 +513,7 @@ export const ServerConfig = () => {
             </div>
           ) : (
             <div className="glass p-12 rounded-2xl border border-border flex flex-col items-center justify-center gap-4">
-              <p className="text-xs font-bold uppercase tracking-widest text-text-secondary">No Discord data available.</p>
+              <p className="text-xs font-bold uppercase tracking-wider text-text-secondary">No Discord data available.</p>
             </div>
           )}
         </div>

@@ -123,7 +123,7 @@ export const UserBackgroundModal: React.FC<UserBackgroundModalProps> = ({ isOpen
 
               <div className="pt-4 border-t border-white/5 flex items-center justify-between">
                 <span className="text-[8px] text-text-secondary uppercase font-bold tracking-[0.2em]">Last Sync: {mockData.lastUpdated}</span>
-                <button className="text-[9px] text-blue-400 font-bold uppercase tracking-widest hover:text-blue-300 transition-colors flex items-center gap-1.5">
+                <button className="text-[9px] text-blue-400 font-bold uppercase tracking-wider hover:text-blue-300 transition-colors flex items-center gap-1.5">
                   <RefreshCw size={10} />
                   Request Deep Scan
                 </button>
