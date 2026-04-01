@@ -8,8 +8,10 @@ interface AuthState {
   user: User | null;
   role: 'owner' | 'admin' | 'mod' | null;
   isLoading: boolean;
+  isHydrated: boolean;
   setUser: (user: User | null) => void;
   setRole: (role: 'owner' | 'admin' | 'mod' | null) => void;
+  setHydrated: (isHydrated: boolean) => void;
   signOut: () => Promise<void>;
 }
 
@@ -37,8 +39,10 @@ export const useAuthStore = create<AuthState>()(
       user: null,
       role: null,
       isLoading: true,
+      isHydrated: false,
       setUser: (user) => set({ user, isLoading: false }),
       setRole: (role) => set({ role }),
+      setHydrated: (isHydrated) => set({ isHydrated }),
       signOut: async () => {
         if (isSupabaseConfigured) {
           await supabase.auth.signOut();

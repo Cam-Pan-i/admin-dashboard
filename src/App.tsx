@@ -1,4 +1,5 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
+import { BrowserRouter, Routes, Route } from 'react-router-dom';
 import { Sidebar } from './components/Sidebar';
 import { Topbar } from './components/Topbar';
 import { Dashboard } from './components/Dashboard';
@@ -19,29 +20,29 @@ import { Bot } from 'lucide-react';
 import { useAuthStore } from './store/useAuthStore';
 import { LoginPage } from './components/LoginPage';
 import { supabase, isSupabaseConfigured } from './lib/supabase';
-import { useEffect } from 'react';
 import { getAccountByEmail } from './lib/accounts';
+
+import { MainPage } from './components/public/MainPage';
+import { ShopPage } from './components/public/ShopPage';
+import { CallbackPage } from './components/public/CallbackPage';
 
 const queryClient = new QueryClient();
 
-export default function App() {
+function DashboardApp() {
   const [activeTab, setActiveTab] = useState('dashboard');
-  const { user, setUser, setRole, isLoading, signOut } = useAuthStore();
-  const [isHydrated, setIsHydrated] = useState(false);
+  const { user, setUser, setRole, isLoading, isHydrated, setHydrated } = useAuthStore();
 
-  // Handle Zustand hydration
   useEffect(() => {
     const unsub = useAuthStore.persist.onFinishHydration(() => {
-      setIsHydrated(true);
+      setHydrated(true);
     });
     
-    // Check if already hydrated
     if (useAuthStore.persist.hasHydrated()) {
-      setIsHydrated(true);
+      setHydrated(true);
     }
 
     return () => unsub();
-  }, []);
+  }, [setHydrated]);
 
   useEffect(() => {
     if (!isHydrated) return;
@@ -51,7 +52,6 @@ export default function App() {
       if (account) {
         setRole(account.role as any);
       } else {
-        // Default role for non-system accounts
         setRole('mod');
       }
     };
@@ -62,7 +62,6 @@ export default function App() {
           setUser(session.user);
           updateRole(session.user.email);
         } else if (!user) {
-          // Only clear if we don't have a mock user
           setUser(null);
         }
       });
@@ -78,7 +77,6 @@ export default function App() {
 
       return () => subscription.unsubscribe();
     } else {
-      // In mock mode, if we're hydrated and have no user, stop loading
       if (isLoading && !user) {
         setUser(null);
       }
@@ -137,30 +135,44 @@ export default function App() {
   };
 
   return (
-    <QueryClientProvider client={queryClient}>
-      <div className="flex min-h-screen bg-bg-primary text-text-primary selection:bg-white/30">
-        <Sidebar activeTab={activeTab} setActiveTab={setActiveTab} />
+    <div className="flex min-h-screen bg-bg-primary text-text-primary selection:bg-white/30">
+      <Sidebar activeTab={activeTab} setActiveTab={setActiveTab} />
+      
+      <div className="flex-1 flex flex-col min-w-0">
+        <Topbar />
         
-        <div className="flex-1 flex flex-col min-w-0">
-          <Topbar />
-          
-          <main className="flex-1 p-4 md:p-8 overflow-y-auto custom-scrollbar">
-            <div className="max-w-7xl mx-auto">
-              <AnimatePresence mode="wait">
-                <motion.div
-                  key={activeTab}
-                  initial={{ opacity: 0, y: 10 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  exit={{ opacity: 0, y: -10 }}
-                  transition={{ duration: 0.2 }}
-                >
-                  {renderContent()}
-                </motion.div>
-              </AnimatePresence>
-            </div>
-          </main>
-        </div>
+        <main className="flex-1 p-4 md:p-8 overflow-y-auto custom-scrollbar">
+          <div className="max-w-7xl mx-auto">
+            <AnimatePresence mode="wait">
+              <motion.div
+                key={activeTab}
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -10 }}
+                transition={{ duration: 0.2 }}
+              >
+                {renderContent()}
+              </motion.div>
+            </AnimatePresence>
+          </div>
+        </main>
       </div>
+    </div>
+  );
+}
+
+export default function App() {
+  return (
+    <QueryClientProvider client={queryClient}>
+      <BrowserRouter>
+        <Routes>
+          <Route path="/main" element={<MainPage />} />
+          <Route path="/shop" element={<ShopPage />} />
+          <Route path="/callback" element={<CallbackPage />} />
+          <Route path="*" element={<DashboardApp />} />
+        </Routes>
+      </BrowserRouter>
     </QueryClientProvider>
   );
 }
+
