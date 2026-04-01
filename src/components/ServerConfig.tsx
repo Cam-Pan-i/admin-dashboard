@@ -390,7 +390,7 @@ export const ServerConfig = () => {
                   Retry Connection
                 </button>
                 <p className="text-[10px] text-text-secondary uppercase tracking-widest">
-                  Ensure DISCORD_BOT_TOKEN and DISCORD_GUILD_ID are set in your environment.
+                  Ensure DISCORD_TOKEN and MAIN_GUILD are set in your environment.
                 </p>
               </div>
             </div>

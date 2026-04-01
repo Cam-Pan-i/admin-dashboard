@@ -1,11 +1,10 @@
 import React, { useEffect, useState } from 'react';
 import { ShoppingCart, Zap, X, AlertTriangle, ShoppingBag, Lock } from 'lucide-react';
-import { Link } from 'react-router-dom';
 import { supabase } from '../../lib/supabase';
 import '../../public.css';
 
 const NOWPAYMENTS_API_KEY = process.env.NOWPAYMENTS_API_KEY || 'YOUR_API_KEY';
-const GUILD_ID = process.env.DISCORD_GUILD_ID || '1466511568614330484';
+const GUILD_ID = process.env.MAIN_GUILD || '1466511568614330484';
 
 interface Product {
   name: string;
@@ -148,13 +147,13 @@ export const ShopPage: React.FC = () => {
       <div className="bg-orb bg-orb-2"></div>
 
       <nav className="nav">
-        <Link to="/main" className="nav-brand">
+        <a href="/main" className="nav-brand">
           <div className="nav-logo"><ShoppingCart size={16} /></div> Bob's Market
-        </Link>
+        </a>
         <div className="nav-links">
-          <Link to="/main" className="nav-link">Home</Link>
-          <Link to="/shop" className="nav-link active">Shop</Link>
-          <Link to="/" className="nav-link">Dashboard</Link>
+          <a href="/main" className="nav-link">Home</a>
+          <a href="/shop" className="nav-link active">Shop</a>
+          <a href="/" className="nav-link">Dashboard</a>
         </div>
         <a href="https://discord.gg/McCU2nPegT" target="_blank" rel="noopener" className="nav-join">Join Server</a>
       </nav>

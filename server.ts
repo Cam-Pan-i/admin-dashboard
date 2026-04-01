@@ -11,19 +11,19 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
 // Environment Variables (Matching callback.py where applicable)
-const DISCORD_CLIENT_ID = process.env.DISCORD_CLIENT_ID || "1347543766340341782";
-const DISCORD_CLIENT_SECRET = process.env.DISCORD_CLIENT_SECRET;
-const REDIRECT_URI = process.env.REDIRECT_URI || "https://bobtheseller.vercel.app/callback.html";
+const CLIENT_ID = process.env.CLIENT_ID || "1347543766340341782";
+const CLIENT_SECRET = process.env.CLIENT_SECRET;
+const REDIRECT_URI = process.env.REDIRECT_URI || "https://bobadmin.vercel.app/callback";
 const SUPABASE_URL = process.env.SUPABASE_URL;
 const SUPABASE_KEY = process.env.SUPABASE_KEY;
 
 // Discord Bot Credentials
-const BOT_TOKEN = process.env.DISCORD_BOT_TOKEN;
-const GUILD_ID = process.env.DISCORD_GUILD_ID;
+const BOT_TOKEN = process.env.DISCORD_TOKEN;
+const GUILD_ID = process.env.MAIN_GUILD;
 
 const supabase = createClient(SUPABASE_URL!, SUPABASE_KEY!);
 
-async function startServer() {
+export async function startServer() {
   const app = express();
   const PORT = 3000;
 
@@ -78,8 +78,8 @@ async function startServer() {
         const tokenResponse = await fetch("https://discord.com/api/v10/oauth2/token", {
           method: "POST",
           body: new URLSearchParams({
-            client_id: DISCORD_CLIENT_ID,
-            client_secret: DISCORD_CLIENT_SECRET!,
+            client_id: CLIENT_ID,
+            client_secret: CLIENT_SECRET!,
             grant_type: "authorization_code",
             code: code as string,
             redirect_uri: REDIRECT_URI,
@@ -164,7 +164,7 @@ async function startServer() {
 
     if (!token || !guildId) {
       return res.status(500).json({ 
-        error: "Discord credentials missing. Please set DISCORD_BOT_TOKEN and DISCORD_GUILD_ID in your environment." 
+        error: "Discord credentials missing. Please set DISCORD_TOKEN and MAIN_GUILD in your environment." 
       });
     }
 
@@ -442,9 +442,17 @@ async function startServer() {
     });
   }
 
-  app.listen(PORT, "0.0.0.0", () => {
-    console.log(`Server running on http://localhost:${PORT}`);
-  });
+  if (process.env.NODE_ENV !== "production" && !process.env.VERCEL) {
+    app.listen(PORT, "0.0.0.0", () => {
+      console.log(`Server running on http://localhost:${PORT}`);
+    });
+  }
+
+  return app;
 }
 
-startServer();
+const appPromise = startServer();
+export default async (req: any, res: any) => {
+  const app = await appPromise;
+  return app(req, res);
+};
