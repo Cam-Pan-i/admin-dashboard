@@ -31,20 +31,20 @@ export async function startServer() {
 
   // --- Vanilla HTML Routes ---
   app.get("/shop", (req, res) => {
-    res.sendFile(path.join(__dirname, "public", "vanilla", "shop.html"));
+    res.sendFile(path.join(__dirname, "..", "public", "vanilla", "shop.html"));
   });
 
   app.get("/callback", (req, res) => {
-    res.sendFile(path.join(__dirname, "public", "vanilla", "callback.html"));
+    res.sendFile(path.join(__dirname, "..", "public", "vanilla", "callback.html"));
   });
 
   app.get("/main", (req, res) => {
-    res.sendFile(path.join(__dirname, "public", "vanilla", "main.html"));
+    res.sendFile(path.join(__dirname, "..", "public", "vanilla", "main.html"));
   });
 
   // --- Static Assets for Vanilla Pages ---
   app.get("/css/main.css", (req, res) => {
-    res.sendFile(path.join(__dirname, "public", "vanilla", "main.css"));
+    res.sendFile(path.join(__dirname, "..", "public", "vanilla", "main.css"));
   });
 
   app.get("/js/config.js", (req, res) => {
