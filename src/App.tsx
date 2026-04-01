@@ -61,7 +61,7 @@ function DashboardApp() {
         if (session?.user) {
           setUser(session.user);
           updateRole(session.user.email);
-        } else if (!user) {
+        } else {
           setUser(null);
         }
       });
@@ -70,15 +70,16 @@ function DashboardApp() {
         if (session?.user) {
           setUser(session.user);
           updateRole(session.user.email);
-        } else if (!user) {
+        } else {
           setUser(null);
         }
       });
 
       return () => subscription.unsubscribe();
     } else {
-      if (isLoading && !user) {
-        setUser(null);
+      // If Supabase is not configured, we just stop loading
+      if (isLoading) {
+        setUser(user); // This will set isLoading to false
       }
     }
   }, [setUser, setRole, user, isLoading, isHydrated]);
