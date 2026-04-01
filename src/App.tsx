@@ -29,7 +29,15 @@ import { getAccountByEmail } from './lib/accounts';
 const queryClient = new QueryClient();
 
 export default function App() {
-  const [activeTab, setActiveTab] = useState('dashboard');
+  const [activeTab, setActiveTab] = useState(() => {
+    if (typeof window === 'undefined') return 'dashboard';
+    const path = window.location.pathname;
+    if (path === '/main') return 'home';
+    if (path === '/shop') return 'public-shop';
+    if (path === '/callback') return 'callback';
+    return 'dashboard';
+  });
+  
   const [currentPath, setCurrentPath] = useState(typeof window !== 'undefined' ? window.location.pathname : '/');
   const { user, setUser, setRole, isLoading, signOut } = useAuthStore();
   const [isHydrated, setIsHydrated] = useState(false);
@@ -66,14 +74,6 @@ export default function App() {
 
   useEffect(() => {
     if (!isHydrated) return;
-
-    // Handle initial public path routing
-    const path = window.location.pathname;
-    setCurrentPath(path);
-    if (path === '/main') setActiveTab('home');
-    else if (path === '/shop') setActiveTab('public-shop');
-    else if (path === '/callback') setActiveTab('callback');
-    else setActiveTab('dashboard'); // Default to dashboard for root
 
     const updateRole = (email: string | undefined) => {
       const account = getAccountByEmail(email);
@@ -114,7 +114,7 @@ export default function App() {
     }
   }, [setUser, setRole, user, isLoading, isHydrated]);
 
-  if (!isHydrated || isLoading) {
+  if (!isHydrated) {
     return (
       <div className="min-h-screen bg-black flex items-center justify-center">
         <div className="w-12 h-12 rounded-2xl bg-white/5 border border-white/10 flex items-center justify-center animate-pulse">
@@ -211,6 +211,16 @@ export default function App() {
           </AnimatePresence>
         </div>
       </QueryClientProvider>
+    );
+  }
+
+  if (isLoading) {
+    return (
+      <div className="min-h-screen bg-black flex items-center justify-center">
+        <div className="w-12 h-12 rounded-2xl bg-white/5 border border-white/10 flex items-center justify-center animate-pulse">
+          <Bot className="text-white/20 w-6 h-6" />
+        </div>
+      </div>
     );
   }
 
