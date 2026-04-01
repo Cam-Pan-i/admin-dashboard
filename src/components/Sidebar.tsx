@@ -1,11 +1,13 @@
 import React, { useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { 
+  Home,
   LayoutDashboard, 
   Users, 
   Ticket, 
   ShieldCheck, 
   Package, 
+  ShoppingCart,
   Shield, 
   BarChart3, 
   Settings,
@@ -21,11 +23,13 @@ import { useAuthStore } from '../store/useAuthStore';
 import { cn } from '../lib/utils';
 
 const navItems = [
+  { id: 'home', label: 'Main Hub', icon: Home },
+  { id: 'public-shop', label: 'Marketplace', icon: ShoppingCart },
   { id: 'dashboard', label: 'Command Center', icon: LayoutDashboard },
   { id: 'members', label: 'Members Matrix', icon: Users },
   { id: 'tickets', label: 'Ticket Control', icon: Ticket },
   { id: 'verification', label: 'Verification', icon: ShieldCheck },
-  { id: 'shop', label: 'Stock & Shop', icon: Package },
+  { id: 'shop', label: 'Shop Admin', icon: Package },
   { id: 'moderation', label: 'Mod Suite', icon: Shield },
   { id: 'analytics', label: 'Analytics Lab', icon: BarChart3 },
   { id: 'ai', label: 'AI Assistant', icon: Sparkles },

@@ -17,11 +17,17 @@ export const LoginPage = () => {
     setIsLoading(true);
     setError(null);
 
-    const normalizedEmail = email.toLowerCase().trim();
+    // MOCK LOGIN FOR TESTING - Priority check
+    const mockAccounts: Record<string, string> = {
+      'owner@example.com': 'owner',
+      'admin@example.com': 'admin',
+      'mod@example.com': 'mod'
+    };
 
-    const tryMockLogin = () => {
+    const normalizedEmail = email.toLowerCase().trim();
+    if (mockAccounts[normalizedEmail] && mockAccounts[normalizedEmail] === password) {
       const account = getAccountByEmail(normalizedEmail);
-      if (account?.testPassword && account.testPassword === password) {
+      if (account) {
         const mockUser: User = {
           id: 'mock-id-' + account.role,
           email: account.email,
@@ -30,24 +36,17 @@ export const LoginPage = () => {
           aud: 'authenticated',
           created_at: new Date().toISOString()
         } as User;
-
+        
         setUser(mockUser);
         setRole(account.role as any);
-        return true;
+        setIsLoading(false);
+        return;
       }
-
-      return false;
-    };
-
-    // Always try system/test accounts first, regardless of Supabase configuration.
-    if (tryMockLogin()) {
-      setIsLoading(false);
-      return;
     }
 
-    // If no matching system account, fall back to Supabase auth when configured.
+    // If not a mock account and Supabase is not configured, show error
     if (!isSupabaseConfigured) {
-      setError('Invalid credentials. Use owner@example.com / owner, admin@example.com / admin, or mod@example.com / mod.');
+      setError('Invalid mock credentials. Use owner@example.com / owner, etc.');
       setIsLoading(false);
       return;
     }
@@ -61,7 +60,6 @@ export const LoginPage = () => {
       if (loginError) throw loginError;
     } catch (err: any) {
       console.error('Login Error:', err);
-
       if (err.message?.includes('Failed to fetch')) {
         setError('Network error: Unable to connect to authentication service. Please check your internet connection or Supabase configuration.');
       } else {

@@ -13,7 +13,6 @@ export interface AccountDefinition {
   role: UserRole;
   permissions: string[];
   isSystemAccount: boolean;
-  testPassword?: string;
 }
 
 /**
@@ -27,8 +26,7 @@ const ACCOUNTS_MAP = new Map<string, AccountDefinition>([
       email: 'owner@example.com',
       role: 'owner',
       permissions: ['*'], // All permissions
-      isSystemAccount: true,
-      testPassword: 'owner'
+      isSystemAccount: true
     }
   ],
   [
@@ -37,8 +35,7 @@ const ACCOUNTS_MAP = new Map<string, AccountDefinition>([
       email: 'admin@example.com',
       role: 'admin',
       permissions: ['dashboard', 'moderation', 'config', 'embeds'],
-      isSystemAccount: true,
-      testPassword: 'admin'
+      isSystemAccount: true
     }
   ],
   [
@@ -47,8 +44,7 @@ const ACCOUNTS_MAP = new Map<string, AccountDefinition>([
       email: 'mod@example.com',
       role: 'mod',
       permissions: ['dashboard', 'moderation'],
-      isSystemAccount: true,
-      testPassword: 'mod'
+      isSystemAccount: true
     }
   ],
 ]);

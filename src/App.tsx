@@ -12,6 +12,9 @@ import { ServerConfig } from './components/ServerConfig';
 import { GeminiAssistant } from './components/GeminiAssistant';
 import { AccountControl } from './components/AccountControl';
 import { EmbedBuilder } from './components/EmbedBuilder';
+import { MainHome } from './components/MainHome';
+import { AuthCallback } from './components/AuthCallback';
+import { PublicShop } from './components/PublicShop';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Bot } from 'lucide-react';
@@ -26,9 +29,35 @@ const queryClient = new QueryClient();
 
 export default function App() {
   const [activeTab, setActiveTab] = useState('dashboard');
-  const { user, setUser, setRole, isLoading, finishLoading } = useAuthStore();
+  const { user, setUser, setRole, isLoading, signOut } = useAuthStore();
+  const [isHydrated, setIsHydrated] = useState(false);
+
+  // Handle Zustand hydration
+  useEffect(() => {
+    const unsub = useAuthStore.persist.onFinishHydration(() => {
+      setIsHydrated(true);
+    });
+    
+    // Check if already hydrated
+    if (useAuthStore.persist.hasHydrated()) {
+      setIsHydrated(true);
+    }
+
+    return () => unsub();
+  }, []);
 
   useEffect(() => {
+    if (!isHydrated) return;
+
+    // Handle path-based routing
+    const path = window.location.pathname;
+    if (path === '/main' || path === '/') {
+      setActiveTab('home');
+      if (path === '/') window.history.replaceState({}, '', '/main');
+    }
+    else if (path === '/callback') setActiveTab('callback');
+    else if (path === '/shop') setActiveTab('public-shop');
+
     const updateRole = (email: string | undefined) => {
       const account = getAccountByEmail(email);
       if (account) {
@@ -44,14 +73,9 @@ export default function App() {
         if (session?.user) {
           setUser(session.user);
           updateRole(session.user.email);
-        } else {
-          // Preserve mock/system account sessions — only clear Supabase users
-          const currentUser = useAuthStore.getState().user;
-          if (!currentUser?.id?.startsWith('mock-id-')) {
-            setUser(null);
-          } else {
-            finishLoading();
-          }
+        } else if (!user) {
+          // Only clear if we don't have a mock user
+          setUser(null);
         }
       });
 
@@ -59,23 +83,21 @@ export default function App() {
         if (session?.user) {
           setUser(session.user);
           updateRole(session.user.email);
-        } else {
-          // Preserve mock/system account sessions — only clear Supabase users
-          const currentUser = useAuthStore.getState().user;
-          if (!currentUser?.id?.startsWith('mock-id-')) {
-            setUser(null);
-          }
+        } else if (!user) {
+          setUser(null);
         }
       });
 
       return () => subscription.unsubscribe();
     } else {
-      // In mock mode, we only need to stop the initial loading state.
-      finishLoading();
+      // In mock mode, if we're hydrated and have no user, stop loading
+      if (isLoading && !user) {
+        setUser(null);
+      }
     }
-  }, [setUser, setRole, finishLoading]);
+  }, [setUser, setRole, user, isLoading, isHydrated]);
 
-  if (isLoading) {
+  if (!isHydrated || isLoading) {
     return (
       <div className="min-h-screen bg-black flex items-center justify-center">
         <div className="w-12 h-12 rounded-2xl bg-white/5 border border-white/10 flex items-center justify-center animate-pulse">
@@ -91,6 +113,12 @@ export default function App() {
 
   const renderContent = () => {
     switch (activeTab) {
+      case 'home':
+        return <MainHome setActiveTab={setActiveTab} />;
+      case 'callback':
+        return <AuthCallback />;
+      case 'public-shop':
+        return <PublicShop />;
       case 'dashboard':
         return <Dashboard />;
       case 'members':
@@ -126,10 +154,42 @@ export default function App() {
     }
   };
 
+  const isFullPage = activeTab === 'callback';
+
+  if (isFullPage) {
+    return (
+      <div className="min-h-screen bg-bg-primary text-text-primary selection:bg-white/30 p-8">
+        <AnimatePresence mode="wait">
+          <motion.div
+            key={activeTab}
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -10 }}
+            transition={{ duration: 0.2 }}
+          >
+            {renderContent()}
+          </motion.div>
+        </AnimatePresence>
+      </div>
+    );
+  }
+
+  const handleTabChange = (tab: string) => {
+    setActiveTab(tab);
+    const pathMap: Record<string, string> = {
+      'home': '/main',
+      'callback': '/callback',
+      'public-shop': '/shop',
+      'dashboard': '/dashboard'
+    };
+    const newPath = pathMap[tab] || `/${tab}`;
+    window.history.pushState({}, '', newPath);
+  };
+
   return (
     <QueryClientProvider client={queryClient}>
       <div className="flex min-h-screen bg-bg-primary text-text-primary selection:bg-white/30">
-        <Sidebar activeTab={activeTab} setActiveTab={setActiveTab} />
+        <Sidebar activeTab={activeTab} setActiveTab={handleTabChange} />
         
         <div className="flex-1 flex flex-col min-w-0">
           <Topbar />
