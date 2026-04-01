@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { ShoppingCart, Users, BarChart3, Mail, Flame, History, ShoppingBag } from 'lucide-react';
+import { Link } from 'react-router-dom';
 import { supabase } from '../../lib/supabase';
 import '../../public.css';
 
@@ -63,13 +64,13 @@ export const MainPage: React.FC = () => {
       <div className="bg-orb bg-orb-2"></div>
 
       <nav className="nav">
-        <a href="/main" className="nav-brand">
+        <Link to="/main" className="nav-brand">
           <div className="nav-logo"><ShoppingCart size={16} /></div> Bob's Market
-        </a>
+        </Link>
         <div className="nav-links">
-          <a href="/main" className="nav-link active">Home</a>
-          <a href="/shop" className="nav-link">Shop</a>
-          <a href="/" className="nav-link">Dashboard</a>
+          <Link to="/main" className="nav-link active">Home</Link>
+          <Link to="/shop" className="nav-link">Shop</Link>
+          <Link to="/" className="nav-link">Dashboard</Link>
         </div>
         <a href="https://discord.gg/McCU2nPegT" target="_blank" rel="noopener" className="nav-join">Join Server</a>
       </nav>
@@ -125,8 +126,8 @@ export const MainPage: React.FC = () => {
           </a>
 
           <div className="quick-links">
-            <a href="/shop" className="quick-link"><ShoppingBag size={12} /> Shop</a>
-            <a href="/" className="quick-link"><Users size={12} /> Dashboard</a>
+            <Link to="/shop" className="quick-link"><ShoppingBag size={12} /> Shop</Link>
+            <Link to="/" className="quick-link"><Users size={12} /> Dashboard</Link>
           </div>
 
           <p style={{ marginTop: '32px', fontSize: '10px', color: 'var(--text-tiny)', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '1px' }}>

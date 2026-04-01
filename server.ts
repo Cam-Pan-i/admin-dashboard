@@ -3,6 +3,7 @@ import { createServer as createViteServer } from "vite";
 import path from "path";
 import { fileURLToPath } from "url";
 import dotenv from "dotenv";
+import fs from "fs";
 
 dotenv.config();
 
@@ -290,6 +291,22 @@ async function startServer() {
       appType: "spa",
     });
     app.use(vite.middlewares);
+
+    // SPA fallback for development
+    app.use('*', async (req, res, next) => {
+      const url = req.originalUrl;
+      try {
+        // Read index.html
+        let template = fs.readFileSync(path.resolve(__dirname, 'index.html'), 'utf-8');
+        // Apply Vite HTML transforms
+        template = await vite.transformIndexHtml(url, template);
+        // Send the transformed HTML
+        res.status(200).set({ 'Content-Type': 'text/html' }).end(template);
+      } catch (e) {
+        vite.ssrFixStacktrace(e as Error);
+        next(e);
+      }
+    });
   } else {
     const distPath = path.join(process.cwd(), 'dist');
     app.use(express.static(distPath));

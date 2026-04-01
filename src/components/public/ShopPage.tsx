@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { ShoppingCart, Zap, X, AlertTriangle, ShoppingBag, Lock } from 'lucide-react';
+import { Link } from 'react-router-dom';
 import { supabase } from '../../lib/supabase';
 import '../../public.css';
 
@@ -147,13 +148,13 @@ export const ShopPage: React.FC = () => {
       <div className="bg-orb bg-orb-2"></div>
 
       <nav className="nav">
-        <a href="/main" className="nav-brand">
+        <Link to="/main" className="nav-brand">
           <div className="nav-logo"><ShoppingCart size={16} /></div> Bob's Market
-        </a>
+        </Link>
         <div className="nav-links">
-          <a href="/main" className="nav-link">Home</a>
-          <a href="/shop" className="nav-link active">Shop</a>
-          <a href="/" className="nav-link">Dashboard</a>
+          <Link to="/main" className="nav-link">Home</Link>
+          <Link to="/shop" className="nav-link active">Shop</Link>
+          <Link to="/" className="nav-link">Dashboard</Link>
         </div>
         <a href="https://discord.gg/McCU2nPegT" target="_blank" rel="noopener" className="nav-join">Join Server</a>
       </nav>
