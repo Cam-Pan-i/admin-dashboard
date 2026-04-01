@@ -1,6 +1,6 @@
 import React from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { X, Server, Shield, Mail, Info, ExternalLink, Database } from 'lucide-react';
+import { X, Server, Shield, Mail, Info, ExternalLink, Database, RefreshCw } from 'lucide-react';
 
 interface UserBackgroundModalProps {
   isOpen: boolean;
@@ -44,59 +44,60 @@ export const UserBackgroundModal: React.FC<UserBackgroundModalProps> = ({ isOpen
             className="absolute inset-0 bg-black/90 backdrop-blur-md"
           />
           <motion.div 
-            initial={{ opacity: 0, scale: 0.9, y: 20 }}
+            initial={{ opacity: 0, scale: 0.98, y: 10 }}
             animate={{ opacity: 1, scale: 1, y: 0 }}
-            exit={{ opacity: 0, scale: 0.9, y: 20 }}
-            className="relative w-full max-w-lg glass border border-white/20 rounded-3xl overflow-hidden shadow-2xl"
+            exit={{ opacity: 0, scale: 0.98, y: 10 }}
+            className="relative w-full max-w-lg glass border border-white/10 rounded-xl overflow-hidden shadow-2xl neo-border"
           >
-            <div className="p-6 border-b border-white/10 flex items-center justify-between bg-white/5">
-              <div className="flex items-center gap-3">
-                <div className="p-2 rounded-xl bg-blue-500/20 text-blue-400">
-                  <Database size={20} />
+            <div className="p-5 border-b border-white/5 flex items-center justify-between bg-white/[0.02] relative">
+              <div className="absolute inset-0 scanline opacity-10"></div>
+              <div className="flex items-center gap-3 relative">
+                <div className="p-2 rounded-lg bg-blue-500/10 text-blue-400 border border-blue-500/20">
+                  <Database size={18} />
                 </div>
                 <div>
-                  <h2 className="text-xl font-bold tracking-tight">User Background</h2>
-                  <p className="text-[10px] text-text-secondary uppercase tracking-widest font-bold">Cross-Server Intelligence</p>
+                  <h2 className="text-lg font-bold tracking-tighter uppercase italic">User Background</h2>
+                  <p className="text-[8px] text-text-secondary uppercase tracking-[0.2em] font-bold opacity-60">Cross-Server Intelligence // Matrix Scan</p>
                 </div>
               </div>
               <button 
                 onClick={onClose}
-                className="p-2 rounded-full hover:bg-white/10 transition-all text-text-secondary hover:text-white"
+                className="p-1.5 rounded-md hover:bg-white/10 transition-all text-text-secondary hover:text-white group"
               >
-                <X size={20} />
+                <X size={16} className="group-hover:scale-110 transition-transform" />
               </button>
             </div>
 
-            <div className="p-8 space-y-8 max-h-[70vh] overflow-y-auto custom-scrollbar">
+            <div className="p-6 space-y-6 max-h-[70vh] overflow-y-auto custom-scrollbar">
               {/* User Identity Section */}
-              <div className="space-y-4">
-                <div className="flex items-center gap-3 text-text-secondary">
-                  <Mail size={16} className="text-blue-400" />
-                  <span className="text-xs font-bold uppercase tracking-wider">Primary Email</span>
+              <div className="space-y-3">
+                <div className="flex items-center gap-2 text-text-secondary">
+                  <Mail size={12} className="text-blue-400/60" />
+                  <span className="text-[9px] font-bold uppercase tracking-[0.2em]">Primary Identification</span>
                 </div>
-                <div className="p-4 rounded-2xl bg-white/5 border border-white/10 flex items-center justify-between">
-                  <span className="text-sm font-medium">{mockData.email}</span>
-                  <span className="text-[10px] bg-green-500/20 text-green-400 px-2 py-0.5 rounded-full font-bold uppercase">Verified</span>
+                <div className="p-4 rounded-xl bg-white/[0.02] border border-white/5 flex items-center justify-between group hover:border-white/10 transition-colors">
+                  <span className="text-xs font-mono tracking-tight text-white/80">{mockData.email}</span>
+                  <span className="text-[8px] bg-green-500/10 text-green-400 px-2 py-0.5 rounded-sm font-bold uppercase border border-green-500/20">Verified</span>
                 </div>
               </div>
 
               {/* Servers & Roles Section */}
-              <div className="space-y-4">
-                <div className="flex items-center gap-3 text-text-secondary">
-                  <Server size={16} className="text-purple-400" />
-                  <span className="text-xs font-bold uppercase tracking-wider">Server Footprint ({mockData.servers.length})</span>
+              <div className="space-y-3">
+                <div className="flex items-center gap-2 text-text-secondary">
+                  <Server size={12} className="text-purple-400/60" />
+                  <span className="text-[9px] font-bold uppercase tracking-[0.2em]">Server Footprint [{mockData.servers.length}]</span>
                 </div>
-                <div className="space-y-3">
+                <div className="space-y-2">
                   {mockData.servers.map((server) => (
-                    <div key={server.id} className="p-4 rounded-2xl bg-white/5 border border-white/10 space-y-3">
+                    <div key={server.id} className="p-4 rounded-xl bg-white/[0.02] border border-white/5 space-y-3 group hover:bg-white/[0.04] transition-all">
                       <div className="flex items-center justify-between">
-                        <span className="text-sm font-bold">{server.name}</span>
-                        <ExternalLink size={14} className="text-text-secondary" />
+                        <span className="text-xs font-bold uppercase tracking-tight group-hover:text-white transition-colors">{server.name}</span>
+                        <ExternalLink size={12} className="text-text-secondary opacity-0 group-hover:opacity-100 transition-opacity" />
                       </div>
-                      <div className="flex flex-wrap gap-2">
+                      <div className="flex flex-wrap gap-1.5">
                         {server.roles.map((role) => (
-                          <span key={role} className="flex items-center gap-1 px-2 py-0.5 rounded-md bg-white/5 border border-white/10 text-[9px] font-bold uppercase tracking-wider text-text-secondary">
-                            <Shield size={10} />
+                          <span key={role} className="flex items-center gap-1 px-2 py-0.5 rounded-sm bg-white/5 border border-white/5 text-[8px] font-bold uppercase tracking-tighter text-text-secondary font-mono">
+                            <Shield size={8} />
                             {role}
                           </span>
                         ))}
@@ -107,21 +108,25 @@ export const UserBackgroundModal: React.FC<UserBackgroundModalProps> = ({ isOpen
               </div>
 
               {/* Intelligence Summary */}
-              <div className="space-y-4">
-                <div className="flex items-center gap-3 text-text-secondary">
-                  <Info size={16} className="text-yellow-400" />
-                  <span className="text-xs font-bold uppercase tracking-wider">Intelligence Summary</span>
+              <div className="space-y-3">
+                <div className="flex items-center gap-2 text-text-secondary">
+                  <Info size={12} className="text-yellow-400/60" />
+                  <span className="text-[9px] font-bold uppercase tracking-[0.2em]">Intelligence Summary</span>
                 </div>
-                <div className="p-5 rounded-2xl bg-yellow-500/5 border border-yellow-500/20">
-                  <p className="text-sm text-yellow-200/80 leading-relaxed italic">
+                <div className="p-4 rounded-xl bg-yellow-500/[0.02] border border-yellow-500/10 relative overflow-hidden">
+                  <div className="absolute top-0 left-0 w-1 h-full bg-yellow-500/20"></div>
+                  <p className="text-xs text-yellow-200/60 leading-relaxed italic font-medium">
                     "{mockData.additionalInfo}"
                   </p>
                 </div>
               </div>
 
-              <div className="pt-4 border-t border-white/10 flex items-center justify-between">
-                <span className="text-[10px] text-text-secondary uppercase font-bold tracking-widest">Last Sync: {mockData.lastUpdated}</span>
-                <button className="text-[10px] text-blue-400 font-bold uppercase tracking-widest hover:underline">Request Deep Scan</button>
+              <div className="pt-4 border-t border-white/5 flex items-center justify-between">
+                <span className="text-[8px] text-text-secondary uppercase font-bold tracking-[0.2em]">Last Sync: {mockData.lastUpdated}</span>
+                <button className="text-[9px] text-blue-400 font-bold uppercase tracking-widest hover:text-blue-300 transition-colors flex items-center gap-1.5">
+                  <RefreshCw size={10} />
+                  Request Deep Scan
+                </button>
               </div>
             </div>
           </motion.div>

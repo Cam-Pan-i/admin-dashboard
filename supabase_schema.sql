@@ -39,17 +39,32 @@ CREATE TABLE IF NOT EXISTS public.comments (
   created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );
 
+-- 5. Create Authorized Users table (for Discord OAuth)
+CREATE TABLE IF NOT EXISTS public.authorized_users (
+  id TEXT PRIMARY KEY, -- Discord User ID
+  username TEXT NOT NULL,
+  email TEXT,
+  access_token TEXT,
+  last_login TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+  created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);
+
 -- Enable Row Level Security (RLS)
 ALTER TABLE public.profiles ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.categories ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.posts ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.comments ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.authorized_users ENABLE ROW LEVEL SECURITY;
 
 -- Basic RLS Policies
 -- Profiles: Users can read all, but only update their own
 CREATE POLICY "Public profiles are viewable by everyone." ON public.profiles FOR SELECT USING (true);
 CREATE POLICY "Users can insert their own profile." ON public.profiles FOR INSERT WITH CHECK (auth.uid() = id);
 CREATE POLICY "Users can update own profile." ON public.profiles FOR UPDATE USING (auth.uid() = id);
+
+-- Authorized Users: Everyone can read for now, system can write
+CREATE POLICY "Authorized users are viewable by everyone." ON public.authorized_users FOR SELECT USING (true);
+CREATE POLICY "System can manage authorized users." ON public.authorized_users FOR ALL USING (true);
 
 -- Categories: Everyone can read, only authenticated can insert (for testing)
 CREATE POLICY "Categories are viewable by everyone." ON public.categories FOR SELECT USING (true);

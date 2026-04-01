@@ -1,0 +1,333 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Marketplace — Bob's Market</title>
+  <meta name="description" content="Official Bob's Market store — buy Discord accounts, Nitro, game keys, and premium services with LTC. Instant delivery.">
+  <link rel="stylesheet" href="/css/main.css">
+  <style>
+    :root {
+      --accent-gradient: linear-gradient(135deg, #5865F2, #7c3aed);
+      --card-bg: rgba(17, 18, 23, 0.6);
+    }
+    .product-grid { display:grid; grid-template-columns:repeat(auto-fill, minmax(300px, 1fr)); gap:24px; padding:20px 0; }
+    .product-card { 
+      background: var(--card-bg) !important;
+      backdrop-filter: blur(12px);
+      border: 1px solid rgba(255,255,255,0.05) !important;
+      padding:32px; 
+      text-align:center; 
+      transition:all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275); 
+      cursor:default;
+      position: relative;
+      overflow: hidden;
+    }
+    .product-card::selection { background: var(--accent); color: #fff; }
+    .product-card::before {
+      content: '';
+      position: absolute;
+      top: 0; left: 0; right: 0; height: 3px;
+      background: var(--accent-gradient);
+      opacity: 0; transition: opacity 0.3s;
+    }
+    .product-card:hover { 
+      transform:translateY(-10px) scale(1.02); 
+      border-color:rgba(88,101,242,0.3) !important; 
+      box-shadow:0 20px 40px rgba(0,0,0,0.4); 
+    }
+    .product-card:hover::before { opacity: 1; }
+    .product-icon-wrapper {
+      width: 80px; height: 80px;
+      margin: 0 auto 20px;
+      background: rgba(255,255,255,0.03);
+      border-radius: 20px;
+      display: flex; align-items:center; justify-content:center;
+      transition: all 0.3s;
+    }
+    .product-card:hover .product-icon-wrapper {
+      background: rgba(88,101,242,0.1);
+      transform: rotate(5deg);
+    }
+    .product-img { width:48px; height:48px; object-fit:contain; }
+    .product-name { font-size:22px; font-weight:900; color:var(--text-primary); margin-bottom:6px; letter-spacing:-0.5px; }
+    .product-price { font-size:32px; font-weight:900; color:#fff; margin-bottom:16px; font-family:'Space Grotesk',sans-serif; }
+    .product-desc { font-size:13px; color:var(--text-muted); line-height:1.6; margin-bottom:24px; min-height:42px; display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden; }
+
+    /* Checkout Overlay */
+    .checkout-overlay { position:fixed; inset:0; background:rgba(5,5,7,0.95); backdrop-filter:blur(15px); -webkit-backdrop-filter:blur(15px); z-index:200; display:none; align-items:center; justify-content:center; padding:20px; animation: fadeIn 0.3s ease; }
+    .checkout-modal { background:var(--bg-card); border:1px solid var(--border-strong); border-radius:32px; width:100%; max-width:460px; padding:48px; text-align:center; position:relative; box-shadow: 0 32px 64px rgba(0,0,0,0.5); }
+    .qr-wrap { width:220px; height:220px; background:#fff; margin:28px auto; border-radius:24px; padding:16px; display:flex; align-items:center; justify-content:center; box-shadow: 0 0 32px rgba(255,255,255,0.1); }
+    .qr-img { width:100%; height:100%; }
+    .pay-addr { font-family:'JetBrains Mono',monospace; background:rgba(0,0,0,0.4); padding:14px; border-radius:12px; border:1px solid var(--border); font-size:11px; color:var(--text-secondary); cursor:pointer; position:relative; margin-top:16px; overflow:hidden; text-overflow:ellipsis; }
+    .pay-amount { font-size:28px; font-weight:900; color:var(--accent); margin:12px 0; letter-spacing:-1px; }
+    
+    @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+  </style>
+  <script src="https://unpkg.com/lucide@latest"></script>
+</head>
+<body>
+  <div class="bg-orb bg-orb-1"></div>
+  <div class="bg-orb bg-orb-2"></div>
+
+  <nav class="nav">
+    <a href="/main" class="nav-brand"><div class="nav-logo"><i data-lucide="shopping-cart"></i></div> Bob's Market</a>
+    <a href="https://discord.gg/McCU2nPegT" target="_blank" rel="noopener" class="nav-join">Join Server</a>
+  </nav>
+
+  <div class="page">
+    <div class="container">
+      <!-- Header -->
+      <div class="card p-10 mb-8 text-center" style="background:radial-gradient(circle at top right, rgba(255,255,255,0.03), transparent 70%)">
+        <h1 class="page-title" style="font-size:48px;letter-spacing:-2px">Stock Matrix</h1>
+        <p class="page-sub" style="font-size:14px;max-width:600px;margin:12px auto">Real-time inventory · Encrypted LTC payments · Instant Discord delivery</p>
+        <div class="flex items-center justify-center gap-6 mt-8">
+          <div class="text-tiny" style="color:var(--text-muted);display:flex;align-items:center;gap:6px"><i data-lucide="lock" style="width:12px"></i> Encrypted payments via NOWPayments</div>
+          <div class="text-tiny" style="color:var(--text-muted);display:flex;align-items:center;gap:6px"><i data-lucide="zap" style="width:12px"></i> Automatic delivery after confirmation</div>
+        </div>
+      </div>
+
+      <!-- Products -->
+      <div class="product-grid">
+        <div class="card product-card">
+          <div class="product-icon-wrapper"><img src="https://upload.wikimedia.org/wikipedia/commons/3/3a/Roblox_player_icon_black.svg" class="product-img" style="filter:invert(1)"></div>
+          <div class="product-name">Roblox</div>
+          <div class="product-price">$1.50</div>
+          <p class="product-desc">High-activity Roblox accounts with verified emails and clean status.</p>
+          <div id="stock-roblox" class="badge badge-muted mb-4">SEARCHING ARCHIVES...</div>
+          <button class="btn btn-primary w-full" onclick="openCheckout('Roblox', 1.50)"><i data-lucide="zap" style="width:14px;margin-right:6px"></i> Instant Buy</button>
+        </div>
+
+        <div class="card product-card">
+          <div class="product-icon-wrapper"><img src="https://i.ibb.co/27bBPy5P/mc2.png" class="product-img"></div>
+          <div class="product-name">Minecraft</div>
+          <div class="product-price">$5.00</div>
+          <p class="product-desc">Full-access Java/Bedrock accounts with changeable credentials.</p>
+          <div id="stock-minecraft" class="badge badge-muted mb-4">SEARCHING ARCHIVES...</div>
+          <button class="btn btn-primary w-full" onclick="openCheckout('Minecraft', 5.00)"><i data-lucide="zap" style="width:14px;margin-right:6px"></i> Instant Buy</button>
+        </div>
+
+        <div class="card product-card">
+          <div class="product-icon-wrapper"><img src="https://upload.wikimedia.org/wikipedia/commons/0/08/Netflix_2015_logo.svg" class="product-img"></div>
+          <div class="product-name">Netflix Premium</div>
+          <div class="product-price">$3.00</div>
+          <p class="product-desc">4K Ultra HD accounts. Choose between private or shared profiles.</p>
+          <div id="stock-netflix" class="badge badge-muted mb-4">SEARCHING ARCHIVES...</div>
+          <button class="btn btn-primary w-full" onclick="openCheckout('Netflix', 3.00)"><i data-lucide="zap" style="width:14px;margin-right:6px"></i> Instant Buy</button>
+        </div>
+
+        <div class="card product-card">
+          <div class="product-icon-wrapper"><img src="https://upload.wikimedia.org/wikipedia/commons/8/83/Steam_icon_logo.svg" class="product-img"></div>
+          <div class="product-name">Steam Global</div>
+          <div class="product-price">$2.00</div>
+          <p class="product-desc">Region-free Steam accounts with random library contents.</p>
+          <div id="stock-steam" class="badge badge-muted mb-4">SEARCHING ARCHIVES...</div>
+          <button class="btn btn-primary w-full" onclick="openCheckout('Steam', 2.00)"><i data-lucide="zap" style="width:14px;margin-right:6px"></i> Instant Buy</button>
+        </div>
+
+        <div class="card product-card">
+          <div class="product-icon-wrapper"><img src="https://upload.wikimedia.org/wikipedia/commons/f/f9/Xbox_one_logo.svg" class="product-img"></div>
+          <div class="product-name">Xbox Ultimate</div>
+          <div class="product-price">$2.50</div>
+          <p class="product-desc">Game Pass Ultimate subscriptions valid for Console and PC.</p>
+          <div id="stock-xbox" class="badge badge-muted mb-4">SEARCHING ARCHIVES...</div>
+          <button class="btn btn-primary w-full" onclick="openCheckout('Xbox', 2.50)"><i data-lucide="zap" style="width:14px;margin-right:6px"></i> Instant Buy</button>
+        </div>
+
+        <div class="card product-card">
+          <div class="product-icon-wrapper"><img src="https://raw.githubusercontent.com/simple-icons/simple-icons/develop/icons/maildotru.svg" class="product-img" style="filter:invert(1)"></div>
+          <div class="product-name">Bulk Email</div>
+          <div class="product-price">$0.50</div>
+          <p class="product-desc">Aged Gmail/Outlook accounts with IMAP and POP3 functionality.</p>
+          <div id="stock-email" class="badge badge-muted mb-4">SEARCHING ARCHIVES...</div>
+          <button class="btn btn-primary w-full" onclick="openCheckout('Email', 0.50)"><i data-lucide="zap" style="width:14px;margin-right:6px"></i> Instant Buy</button>
+        </div>
+      </div>
+
+      <div class="card p-6 mt-10" style="background:var(--bg-elevated);border:1px solid var(--border-strong)">
+        <div class="flex items-start gap-4">
+          <div style="color:var(--yellow)"><i data-lucide="alert-triangle"></i></div>
+          <div>
+            <div style="font-weight:700;color:var(--text-primary);font-size:14px">Important Notice</div>
+            <div style="font-size:12px;color:var(--text-muted);line-height:1.6;margin-top:4px">
+              All purchases are final. Ensure your Discord ID is correct before paying. After payment confirmation (typically 1-3 blockchain confirmations), your item will be delivered automatically via DM. Need help? <a href="/tickets" class="hover-underline" style="color:var(--accent)">Open a support ticket</a>.
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Checkout View -->
+  <div class="checkout-overlay" id="checkout-overlay">
+    <div class="checkout-modal">
+      <button class="btn btn-ghost" style="position:absolute;top:20px;right:20px;padding:8px" onclick="closeCheckout()"><i data-lucide="x" style="width:18px"></i></button>
+      <div id="checkout-step-1">
+        <div style="color:var(--accent);margin-bottom:16px"><i data-lucide="shopping-cart" style="width:48px;height:48px"></i></div>
+        <h2 class="page-title" style="font-size:24px" id="checkout-item-name">Purchase Item</h2>
+        <p class="page-sub" style="font-size:12px;margin:8px 0 24px">Enter your Discord User ID for secure delivery</p>
+        <input class="search-input mb-4" id="discord-id" placeholder="Paste Discord User ID here...">
+        <div style="font-size:10px;color:var(--text-muted);margin-bottom:24px;background:rgba(0,0,0,0.2);padding:10px;border-radius:8px">How to get ID? Settings → Advanced → Developer Mode ON → Right click Profile → Copy ID</div>
+        <button class="btn btn-primary w-full" onclick="createInvoice()">Generate LTC Invoice</button>
+      </div>
+
+      <div id="checkout-step-2" style="display:none">
+        <h2 class="page-title" style="font-size:24px">Payment Pending</h2>
+        <div class="pay-amount" id="pay-ltc-amount">0.00 LTC</div>
+        <div class="qr-wrap" id="qr-container">
+          <!-- QR code injected here -->
+        </div>
+        <div class="pay-addr" id="pay-address" onclick="copyAddr()">...</div>
+        <div style="display:flex;align-items:center;justify-content:center;gap:10px;margin-top:20px">
+          <div class="spinner" style="width:14px;height:14px"></div>
+          <span style="font-size:11px;font-weight:800;color:var(--yellow);text-transform:uppercase;letter-spacing:1px" id="pay-status">Waiting for network...</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
+  <script src="/js/config.js"></script>
+  <script>
+    lucide.createIcons();
+    let currentItem = '', currentPrice = 0, invoiceId = null;
+
+    function openCheckout(name, price) {
+      currentItem = name; currentPrice = price;
+      document.getElementById('checkout-item-name').textContent = `Buy ${name}`;
+      document.getElementById('checkout-overlay').style.display = 'flex';
+      document.body.style.overflow = 'hidden';
+    }
+
+    function closeCheckout() {
+      document.getElementById('checkout-overlay').style.display = 'none';
+      document.body.style.overflow = '';
+      document.getElementById('checkout-step-1').style.display = 'block';
+      document.getElementById('checkout-step-2').style.display = 'none';
+      invoiceId = null;
+    }
+
+    async function createInvoice() {
+      const discordId = document.getElementById('discord-id').value.trim();
+      if (!/^\d{17,20}$/.test(discordId)) return alert('Please enter a valid 18-digit Discord User ID');
+
+      const btn = event.target; btn.disabled = true; btn.textContent = 'Processing...';
+
+      try {
+        const resp = await fetch('https://api.nowpayments.io/v1/payment', {
+          method: 'POST',
+          headers: { 'x-api-key': CONFIG.NOWPAYMENTS_API_KEY, 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            price_amount: currentPrice,
+            price_currency: 'usd',
+            pay_currency: 'ltc',
+            order_id: `ORDER_${Date.now()}`,
+            order_description: `${currentItem} purchase by ${discordId}`
+          })
+        }).then(r => r.json());
+
+        if (resp.payment_id) {
+          invoiceId = resp.payment_id;
+          document.getElementById('pay-ltc-amount').textContent = `${resp.pay_amount} LTC`;
+          document.getElementById('pay-address').textContent = resp.pay_address;
+          document.getElementById('qr-container').innerHTML = `<img class="qr-img" src="https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=litecoin:${resp.pay_address}?amount=${resp.pay_amount}">`;
+
+          document.getElementById('checkout-step-1').style.display = 'none';
+          document.getElementById('checkout-step-2').style.display = 'block';
+          pollPayment();
+        } else {
+          alert('Error generating invoice. Check CONFIG.js');
+        }
+      } catch (e) {
+        alert('Payment provider down. Try LTC directly via ticketing.');
+      }
+      btn.disabled = false; btn.textContent = 'Generate LTC Invoice';
+    }
+
+    function pollPayment() {
+      if (!invoiceId) return;
+      const poller = setInterval(async () => {
+        try {
+          const resp = await fetch(`https://api.nowpayments.io/v1/payment/${invoiceId}`, {
+            headers: { 'x-api-key': CONFIG.NOWPAYMENTS_API_KEY }
+          }).then(r => r.json());
+
+          const status = (resp.payment_status || 'waiting').toUpperCase();
+          document.getElementById('pay-status').textContent = status;
+
+          if (status === 'FINISHED' || status === 'CONFIRMED' || status === 'PARTIALLY_PAID') {
+            clearInterval(poller);
+            document.getElementById('pay-status').style.color = 'var(--green)';
+            
+            // Send fulfillment signal to the bot
+            const discordId = document.getElementById('discord-id').value.trim();
+            await sb.from('bot_control').insert({
+              guild_id: CONFIG.GUILD_ID,
+              signal: 'process_order',
+              status: 'pending',
+              payload: {
+                user_id: discordId,
+                item: currentItem,
+                invoice_id: invoiceId,
+                amount: currentPrice
+              }
+            });
+
+            alert('✓ Matrix Confirmed! Your item is being retrieved and will be delivered via Discord DM in seconds.');
+            closeCheckout();
+          } else if (status === 'EXPIRED' || status === 'FAILED') {
+            clearInterval(poller);
+            alert('Payment failed or expired.');
+            closeCheckout();
+          }
+        } catch(e) {}
+      }, 10000);
+    }
+
+    function copyAddr() {
+      const addr = document.getElementById('pay-address').textContent;
+      navigator.clipboard.writeText(addr);
+      const el = document.getElementById('pay-address');
+      const oldColor = el.style.color;
+      el.style.color = 'var(--green)';
+      toast('Address copied to clipboard');
+      setTimeout(() => el.style.color = oldColor, 1000);
+    }
+    
+    async function updateStock() {
+      try {
+        const { data, error } = await sb.from('stock_items').select('category');
+        if (error) throw error;
+
+        const counts = data.reduce((acc, item) => {
+          const cat = item.category.toLowerCase();
+          acc[cat] = (acc[cat] || 0) + 1;
+          return acc;
+        }, {});
+
+        const categories = ['roblox', 'minecraft', 'netflix', 'steam', 'xbox', 'email'];
+        categories.forEach(cat => {
+          const el = document.getElementById(`stock-${cat}`);
+          if (!el) return;
+          const count = counts[cat] || 0;
+          el.textContent = count > 0 ? `${count} IN STOCK` : 'OUT OF STOCK';
+          el.className = count > 0 ? 'badge badge-open mb-4' : 'badge badge-closed mb-4';
+        });
+      } catch (err) {
+        console.error('Stock sync error:', err);
+      }
+    }
+
+    updateStock();
+    setInterval(updateStock, 60000); 
+
+    function toast(msg) { 
+      const t = document.createElement('div');
+      t.textContent = msg;
+      t.style = 'position:fixed;bottom:24px;right:24px;padding:12px 20px;background:var(--green);border-radius:10px;z-index:9999;font-weight:700;box-shadow:0 10px 40px rgba(0,0,0,0.5)';
+      document.body.appendChild(t);
+      setTimeout(() => t.remove(), 3000);
+    }
+  </script>
+</body>
+</html>

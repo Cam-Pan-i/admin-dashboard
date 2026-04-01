@@ -45,20 +45,8 @@ export const Sidebar = ({ activeTab, setActiveTab }: { activeTab: string, setAct
     setMobileMenuOpen(false);
   };
 
-  // Close mobile menu on window resize if it's open
-  useEffect(() => {
-    const handleResize = () => {
-      if (window.innerWidth >= 768 && isMobileMenuOpen) {
-        setMobileMenuOpen(false);
-      }
-    };
-    window.addEventListener('resize', handleResize);
-    return () => window.removeEventListener('resize', handleResize);
-  }, [isMobileMenuOpen, setMobileMenuOpen]);
-
   return (
     <>
-      {/* Mobile Overlay */}
       <AnimatePresence>
         {isMobileMenuOpen && (
           <motion.div
@@ -66,7 +54,7 @@ export const Sidebar = ({ activeTab, setActiveTab }: { activeTab: string, setAct
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
             onClick={() => setMobileMenuOpen(false)}
-            className="fixed inset-0 bg-black/60 backdrop-blur-sm z-40 md:hidden"
+            className="fixed inset-0 bg-black/80 backdrop-blur-md z-40 md:hidden"
           />
         )}
       </AnimatePresence>
@@ -74,90 +62,112 @@ export const Sidebar = ({ activeTab, setActiveTab }: { activeTab: string, setAct
       <motion.aside
         initial={false}
         animate={{ 
-          width: isSidebarCollapsed ? 80 : 260,
-          x: isMobileMenuOpen ? 0 : (typeof window !== 'undefined' && window.innerWidth < 768 ? -260 : 0)
+          width: isSidebarCollapsed ? 72 : 240,
+          x: isMobileMenuOpen ? 0 : (typeof window !== 'undefined' && window.innerWidth < 768 ? -240 : 0)
         }}
-        transition={{ type: 'spring', damping: 25, stiffness: 200 }}
+        transition={{ type: 'spring', damping: 30, stiffness: 300 }}
         className={cn(
-          "h-screen bg-bg-secondary border-r border-border flex flex-col fixed md:relative z-50",
+          "h-screen bg-bg-primary border-r border-white/[0.03] flex flex-col fixed md:relative z-50",
           !isMobileMenuOpen && "pointer-events-none md:pointer-events-auto"
         )}
       >
-        <div className="p-6 flex items-center justify-between overflow-hidden">
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-xl bg-white flex items-center justify-center shrink-0 shadow-[0_0_20px_rgba(255,255,255,0.1)]">
-              <Bot className="text-black w-6 h-6" />
+        <div className="h-20 flex items-center px-6 justify-between overflow-hidden border-b border-white/[0.03]">
+          <div className="flex items-center gap-4">
+            <div className="w-8 h-8 rounded-lg bg-white flex items-center justify-center shrink-0 shadow-[0_0_20px_rgba(255,255,255,0.15)]">
+              <Bot className="text-black w-5 h-5" />
             </div>
             {!isSidebarCollapsed && (
-              <motion.span 
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                className="font-bold text-xl tracking-tight whitespace-nowrap"
+              <motion.div 
+                initial={{ opacity: 0, x: -10 }}
+                animate={{ opacity: 1, x: 0 }}
+                className="flex flex-col"
               >
-                BOB <span className="text-text-secondary font-light">ADMIN</span>
-              </motion.span>
+                <span className="font-black text-sm tracking-[0.2em] leading-none">BOB</span>
+                <span className="text-[10px] text-text-secondary font-bold tracking-widest mt-1">MASTER ADMIN</span>
+              </motion.div>
             )}
           </div>
           <button 
             onClick={() => setMobileMenuOpen(false)}
             className="p-2 rounded-lg hover:bg-white/5 text-text-secondary md:hidden"
           >
-            <X size={20} />
+            <X size={18} />
           </button>
         </div>
 
-        <nav className="flex-1 px-3 py-4 space-y-1 overflow-y-auto custom-scrollbar pointer-events-auto">
+        <div className="flex-1 px-3 py-6 space-y-1 overflow-y-auto custom-scrollbar pointer-events-auto">
           {navItems.map((item) => (
             <button
               key={item.id}
               onClick={() => handleTabClick(item.id)}
               className={cn(
-                "w-full flex items-center gap-3 px-3 py-3 rounded-xl transition-all duration-200 group relative",
+                "w-full flex items-center gap-3 px-3 py-2.5 rounded-lg transition-all duration-300 group relative overflow-hidden",
                 activeTab === item.id 
-                  ? "bg-white/10 text-white" 
-                  : "text-text-secondary hover:bg-white/5 hover:text-text-primary"
+                  ? "text-white" 
+                  : "text-text-secondary hover:text-text-primary"
               )}
             >
-              <item.icon className={cn("w-5 h-5 shrink-0", activeTab === item.id ? "text-white" : "group-hover:text-text-primary")} />
+              {activeTab === item.id && (
+                <motion.div 
+                  layoutId="sidebar-active"
+                  className="absolute inset-0 bg-white/[0.03] border border-white/[0.05] rounded-lg"
+                  transition={{ type: 'spring', damping: 25, stiffness: 200 }}
+                />
+              )}
+              
+              <div className={cn(
+                "w-8 h-8 flex items-center justify-center rounded-lg transition-all duration-300 z-10",
+                activeTab === item.id ? "bg-white/10" : "group-hover:bg-white/5"
+              )}>
+                <item.icon size={16} className={cn(
+                  "transition-all duration-300",
+                  activeTab === item.id ? "scale-110" : "opacity-50 group-hover:opacity-100"
+                )} />
+              </div>
+
               {!isSidebarCollapsed && (
                 <motion.span 
                   initial={{ opacity: 0 }}
                   animate={{ opacity: 1 }}
-                  className="font-medium text-sm"
+                  className="font-bold text-[11px] uppercase tracking-widest z-10"
                 >
                   {item.label}
                 </motion.span>
               )}
+
               {activeTab === item.id && (
                 <motion.div 
-                  layoutId="active-pill"
-                  className="absolute left-0 w-1 h-6 bg-white rounded-r-full"
+                  layoutId="sidebar-indicator"
+                  className="absolute left-0 w-0.5 h-4 bg-white rounded-r-full z-10"
                 />
               )}
             </button>
           ))}
-        </nav>
+        </div>
 
-        <button
-          onClick={() => setSidebarCollapsed(!isSidebarCollapsed)}
-          className="absolute -right-3 top-20 w-6 h-6 rounded-full bg-bg-tertiary border border-border flex items-center justify-center text-text-secondary hover:text-white transition-colors hidden md:flex"
-        >
-          {isSidebarCollapsed ? <ChevronRight size={14} /> : <ChevronLeft size={14} />}
-        </button>
-
-        <div className="p-4 border-t border-border pointer-events-auto">
-          <div className="flex items-center gap-3 p-2 rounded-xl hover:bg-white/5 transition-colors cursor-pointer">
-            <div className="w-8 h-8 rounded-full bg-white/10 border border-white/20 overflow-hidden shrink-0">
+        <div className="p-4 border-t border-white/[0.03] pointer-events-auto bg-bg-secondary/50">
+          <div className="flex items-center gap-3 p-2 rounded-xl hover:bg-white/5 transition-all group cursor-pointer">
+            <div className="w-8 h-8 rounded-lg bg-white/5 border border-white/10 overflow-hidden shrink-0 group-hover:border-white/20 transition-all">
               <img src={`https://api.dicebear.com/7.x/avataaars/svg?seed=${user?.email}`} alt="User" referrerPolicy="no-referrer" />
             </div>
             {!isSidebarCollapsed && (
               <div className="overflow-hidden">
-                <p className="text-xs font-bold truncate">{user?.email?.split('@')[0]}</p>
-                <p className="text-[10px] text-text-secondary truncate uppercase font-bold">{role}</p>
+                <p className="text-[11px] font-black truncate tracking-wider uppercase">{user?.email?.split('@')[0]}</p>
+                <div className="flex items-center gap-1.5 mt-0.5">
+                  <div className="w-1 h-1 rounded-full bg-emerald-500 animate-pulse" />
+                  <p className="text-[9px] text-text-secondary truncate uppercase font-bold tracking-widest">{role}</p>
+                </div>
               </div>
             )}
           </div>
         </div>
+
+        <button
+          onClick={() => setSidebarCollapsed(!isSidebarCollapsed)}
+          className="absolute -right-3 top-[88px] w-6 h-6 rounded-lg bg-bg-primary border border-white/10 flex items-center justify-center text-text-secondary hover:text-white transition-all hover:scale-110 z-50 hidden md:flex"
+        >
+          {isSidebarCollapsed ? <ChevronRight size={12} /> : <ChevronLeft size={12} />}
+        </button>
       </motion.aside>
     </>
   );

@@ -61,7 +61,7 @@ function DashboardApp() {
         if (session?.user) {
           setUser(session.user);
           updateRole(session.user.email);
-        } else {
+        } else if (!user) {
           setUser(null);
         }
       });
@@ -70,16 +70,15 @@ function DashboardApp() {
         if (session?.user) {
           setUser(session.user);
           updateRole(session.user.email);
-        } else {
+        } else if (!user) {
           setUser(null);
         }
       });
 
       return () => subscription.unsubscribe();
     } else {
-      // If Supabase is not configured, we just stop loading
-      if (isLoading) {
-        setUser(user); // This will set isLoading to false
+      if (isLoading && !user) {
+        setUser(null);
       }
     }
   }, [setUser, setRole, user, isLoading, isHydrated]);
@@ -167,9 +166,6 @@ export default function App() {
     <QueryClientProvider client={queryClient}>
       <BrowserRouter>
         <Routes>
-          <Route path="/main" element={<MainPage />} />
-          <Route path="/shop" element={<ShopPage />} />
-          <Route path="/callback" element={<CallbackPage />} />
           <Route path="*" element={<DashboardApp />} />
         </Routes>
       </BrowserRouter>

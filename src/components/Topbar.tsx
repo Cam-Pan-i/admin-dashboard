@@ -13,68 +13,65 @@ export const Topbar = () => {
   };
 
   return (
-    <header className="h-16 border-b border-border bg-bg-primary/80 backdrop-blur-md flex items-center justify-between px-4 md:px-8 sticky top-0 z-40">
-      <div className="flex items-center gap-4 md:gap-6">
+    <header className="h-20 border-b border-white/[0.03] bg-bg-primary/50 backdrop-blur-2xl flex items-center justify-between px-6 md:px-10 sticky top-0 z-40">
+      <div className="flex items-center gap-6">
         <button 
           onClick={() => setMobileMenuOpen(!isMobileMenuOpen)}
-          className="p-2 rounded-xl hover:bg-white/5 text-text-secondary hover:text-text-primary transition-all md:hidden"
+          className="p-2.5 rounded-lg bg-white/5 border border-white/10 text-text-secondary hover:text-text-primary transition-all md:hidden"
         >
-          {isMobileMenuOpen ? <X size={20} /> : <Menu size={20} />}
+          {isMobileMenuOpen ? <X size={18} /> : <Menu size={18} />}
         </button>
 
-        {!isSupabaseConfigured && (
-          <div className="hidden lg:flex items-center gap-2 px-3 py-1 rounded-full bg-red-500/10 border border-red-500/20 text-red-500 text-[10px] font-bold uppercase tracking-widest animate-pulse">
-            <AlertTriangle size={12} />
-            Mock Mode
+        <div className="hidden md:flex items-center gap-4">
+          <div className="flex items-center gap-3 px-4 py-2 rounded-lg bg-white/[0.02] border border-white/[0.05] hover:border-white/20 transition-all group cursor-pointer">
+            <div className="w-6 h-6 rounded bg-white text-black flex items-center justify-center text-[10px] font-black tracking-tighter">
+              BS
+            </div>
+            <div className="flex flex-col">
+              <span className="text-[11px] font-black uppercase tracking-widest leading-none">BOB'S EMPORIUM</span>
+              <span className="text-[9px] text-text-secondary font-bold mt-0.5">PRODUCTION INSTANCE</span>
+            </div>
+            <ChevronDown size={12} className="text-text-secondary group-hover:text-white transition-colors ml-2" />
           </div>
-        )}
 
-        <div className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-bg-secondary border border-border cursor-pointer hover:border-white/50 transition-colors group">
-          <div className="w-6 h-6 rounded-md bg-white text-black flex items-center justify-center text-[10px] font-bold">
-            BS
-          </div>
-          <span className="text-sm font-medium">Bob's Emporium</span>
-          <ChevronDown size={14} className="text-text-secondary group-hover:text-white" />
-        </div>
-
-        <div className="relative group hidden md:block">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-text-secondary group-focus-within:text-white transition-colors" size={16} />
-          <input 
-            type="text" 
-            placeholder="Search anything..." 
-            className="bg-bg-secondary border border-border rounded-xl pl-10 pr-12 py-2 text-sm w-64 focus:outline-none focus:border-white/50 focus:ring-1 focus:ring-white/10 transition-all"
-          />
-          <div className="absolute right-3 top-1/2 -translate-y-1/2 flex items-center gap-1 px-1.5 py-0.5 rounded border border-border bg-bg-tertiary text-[10px] text-text-secondary">
-            <Command size={10} /> K
-          </div>
+          {!isSupabaseConfigured && (
+            <div className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-white/5 border border-white/10 text-white/40 text-[9px] font-black uppercase tracking-[0.2em]">
+              <AlertTriangle size={10} className="animate-pulse" />
+              SIMULATION MODE
+            </div>
+          )}
         </div>
       </div>
 
-      <div className="flex items-center gap-4">
-        <button className="p-2 rounded-xl hover:bg-white/5 text-text-secondary hover:text-text-primary transition-all relative">
-          <Bell size={20} />
-          <span className="absolute top-2 right-2 w-2 h-2 bg-white rounded-full border-2 border-bg-primary"></span>
-        </button>
-        
-        <div className="h-8 w-[1px] bg-border mx-2"></div>
-        
-        <div className="flex items-center gap-3 pl-2">
-          <div className="text-right hidden sm:block">
-            <p className="text-xs font-bold">{user?.email?.split('@')[0]}</p>
-            <p className="text-[10px] text-text-secondary uppercase tracking-wider font-bold">{role}</p>
-          </div>
-          <div className="w-10 h-10 rounded-xl border border-border overflow-hidden bg-bg-tertiary">
-            <img src={`https://api.dicebear.com/7.x/avataaars/svg?seed=${user?.email}`} alt="Avatar" referrerPolicy="no-referrer" />
+      <div className="flex items-center gap-6">
+        <div className="relative group hidden lg:block">
+          <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-text-secondary group-focus-within:text-white transition-colors" size={14} />
+          <input 
+            type="text" 
+            placeholder="COMMAND SEARCH..." 
+            className="bg-white/[0.02] border border-white/[0.05] rounded-lg pl-11 pr-14 py-2.5 text-[10px] font-bold tracking-widest w-72 focus:outline-none focus:border-white/20 focus:ring-0 transition-all placeholder:text-text-secondary/50 uppercase"
+          />
+          <div className="absolute right-4 top-1/2 -translate-y-1/2 flex items-center gap-1 px-1.5 py-1 rounded border border-white/10 bg-white/5 text-[9px] font-black text-text-secondary">
+            <Command size={10} /> K
           </div>
         </div>
 
-        <button 
-          onClick={handleLogout}
-          className="p-2 rounded-xl hover:bg-red-500/10 text-text-secondary hover:text-red-500 transition-all"
-          title="Logout"
-        >
-          <LogOut size={20} />
-        </button>
+        <div className="flex items-center gap-2">
+          <button className="p-2.5 rounded-lg hover:bg-white/5 text-text-secondary hover:text-text-primary transition-all relative group">
+            <Bell size={18} className="group-hover:scale-110 transition-transform" />
+            <span className="absolute top-2.5 right-2.5 w-1.5 h-1.5 bg-white rounded-full shadow-[0_0_10px_rgba(255,255,255,0.5)]"></span>
+          </button>
+          
+          <div className="h-6 w-[1px] bg-white/[0.05] mx-2"></div>
+          
+          <button 
+            onClick={handleLogout}
+            className="p-2.5 rounded-lg hover:bg-white/5 text-text-secondary hover:text-white transition-all group"
+            title="TERMINATE SESSION"
+          >
+            <LogOut size={18} className="group-hover:translate-x-0.5 transition-transform" />
+          </button>
+        </div>
       </div>
     </header>
   );

@@ -3,21 +3,164 @@ import { createServer as createViteServer } from "vite";
 import path from "path";
 import { fileURLToPath } from "url";
 import dotenv from "dotenv";
-import fs from "fs";
+import { createClient } from "@supabase/supabase-js";
 
 dotenv.config();
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
+// Environment Variables (Matching callback.py where applicable)
+const DISCORD_CLIENT_ID = process.env.DISCORD_CLIENT_ID || "1347543766340341782";
+const DISCORD_CLIENT_SECRET = process.env.DISCORD_CLIENT_SECRET;
+const REDIRECT_URI = process.env.REDIRECT_URI || "https://bobtheseller.vercel.app/callback.html";
+const SUPABASE_URL = process.env.SUPABASE_URL;
+const SUPABASE_KEY = process.env.SUPABASE_KEY;
+
+// Discord Bot Credentials
+const BOT_TOKEN = process.env.DISCORD_BOT_TOKEN;
+const GUILD_ID = process.env.DISCORD_GUILD_ID;
+
+const supabase = createClient(SUPABASE_URL!, SUPABASE_KEY!);
+
 async function startServer() {
   const app = express();
   const PORT = 3000;
 
-  // API routes
+  app.use(express.json());
+
+  // --- Vanilla HTML Routes ---
+  app.get("/shop", (req, res) => {
+    res.sendFile(path.join(__dirname, "public", "vanilla", "shop.html"));
+  });
+
+  app.get("/callback", (req, res) => {
+    res.sendFile(path.join(__dirname, "public", "vanilla", "callback.html"));
+  });
+
+  app.get("/main", (req, res) => {
+    res.sendFile(path.join(__dirname, "public", "vanilla", "main.html"));
+  });
+
+  // --- Static Assets for Vanilla Pages ---
+  app.get("/css/main.css", (req, res) => {
+    res.sendFile(path.join(__dirname, "public", "vanilla", "main.css"));
+  });
+
+  app.get("/js/config.js", (req, res) => {
+    res.type("application/javascript");
+    res.send(`
+      window.CONFIG = {
+        SUPABASE_URL: "${SUPABASE_URL || ''}",
+        SUPABASE_KEY: "${SUPABASE_KEY || ''}",
+        GUILD_ID: "${GUILD_ID || ''}",
+        NOWPAYMENTS_API_KEY: "${process.env.NOWPAYMENTS_API_KEY || ''}"
+      };
+    `);
+  });
+
+  // --- API Routes ---
+
+  // Health check
+  app.get("/api/health", (req, res) => {
+    res.json({ status: "ok" });
+  });
+
+  // Callback API (Logic from callback.py)
+  app.get("/api/callback", async (req, res) => {
+    const { code, access_token: queryToken } = req.query;
+
+    try {
+      let accessToken = queryToken as string;
+
+      if (code) {
+        // Exchange code for tokens
+        const tokenResponse = await fetch("https://discord.com/api/v10/oauth2/token", {
+          method: "POST",
+          body: new URLSearchParams({
+            client_id: DISCORD_CLIENT_ID,
+            client_secret: DISCORD_CLIENT_SECRET!,
+            grant_type: "authorization_code",
+            code: code as string,
+            redirect_uri: REDIRECT_URI,
+          }),
+          headers: {
+            "Content-Type": "application/x-www-form-urlencoded",
+          },
+        });
+
+        const tokenData = await tokenResponse.json();
+        if (!tokenData.access_token) {
+          throw new Error("Failed to exchange code for token: " + JSON.stringify(tokenData));
+        }
+        accessToken = tokenData.access_token;
+      }
+
+      if (!accessToken) {
+        return res.status(400).send("No access token or code provided");
+      }
+
+      // Get user profile
+      const userResponse = await fetch("https://discord.com/api/v10/users/@me", {
+        headers: {
+          Authorization: `Bearer ${accessToken}`,
+        },
+      });
+
+      const userData = await userResponse.json();
+      if (!userData.id) {
+        throw new Error("Failed to fetch user data: " + JSON.stringify(userData));
+      }
+
+      // Save to Supabase (authorized_users table)
+      const { error: supabaseError } = await supabase
+        .from("authorized_users")
+        .upsert({
+          user_id: userData.id,
+          username: userData.username,
+          email: userData.email,
+          access_token: accessToken,
+          last_login: new Date().toISOString(),
+        });
+
+      if (supabaseError) {
+        throw new Error("Supabase error: " + supabaseError.message);
+      }
+
+      // Success response (HTML)
+      res.send(`
+        <!DOCTYPE html>
+        <html>
+        <head>
+          <title>Success — Bob's Market</title>
+          <style>
+            body { background: #0a0a0c; color: #fff; font-family: sans-serif; display: flex; align-items: center; justify-content: center; height: 100vh; margin: 0; }
+            .card { background: rgba(20, 20, 24, 0.8); border: 1px solid rgba(255, 255, 255, 0.08); padding: 40px; border-radius: 20px; text-align: center; }
+            h1 { color: #22c55e; }
+          </style>
+        </head>
+        <body>
+          <div class="card">
+            <h1>Verification Successful</h1>
+            <p>Welcome, ${userData.username}. Your identity has been verified.</p>
+            <p>You can now close this window or return to the server.</p>
+            <script>
+              setTimeout(() => { window.location.href = '/main'; }, 3000);
+            </script>
+          </div>
+        </body>
+        </html>
+      `);
+
+    } catch (error) {
+      console.error("Callback error:", error);
+      res.status(500).send("Internal Server Error during verification: " + (error as Error).message);
+    }
+  });
+
   app.get("/api/discord/guild", async (req, res) => {
-    const token = process.env.DISCORD_BOT_TOKEN;
-    const guildId = process.env.DISCORD_GUILD_ID;
+    const token = BOT_TOKEN;
+    const guildId = GUILD_ID;
 
     if (!token || !guildId) {
       return res.status(500).json({ 
@@ -58,8 +201,8 @@ async function startServer() {
   });
 
   app.get("/api/discord/members", async (req, res) => {
-    const token = process.env.DISCORD_BOT_TOKEN;
-    const guildId = process.env.DISCORD_GUILD_ID;
+    const token = BOT_TOKEN;
+    const guildId = GUILD_ID;
 
     if (!token || !guildId) {
       return res.status(500).json({ 
@@ -114,8 +257,8 @@ async function startServer() {
   });
 
   app.get("/api/discord/audit-logs", async (req, res) => {
-    const token = process.env.DISCORD_BOT_TOKEN;
-    const guildId = process.env.DISCORD_GUILD_ID;
+    const token = BOT_TOKEN;
+    const guildId = GUILD_ID;
 
     if (!token || !guildId) {
       return res.status(500).json({ error: "Discord credentials missing." });
@@ -199,8 +342,8 @@ async function startServer() {
   });
 
   app.post("/api/discord/moderate", express.json(), async (req, res) => {
-    const token = process.env.DISCORD_BOT_TOKEN;
-    const guildId = process.env.DISCORD_GUILD_ID;
+    const token = BOT_TOKEN;
+    const guildId = GUILD_ID;
     const { userId, action, reason } = req.body;
 
     if (!token || !guildId) {
@@ -244,8 +387,8 @@ async function startServer() {
   });
 
   app.post("/api/discord/send-embed", express.json(), async (req, res) => {
-    const token = process.env.DISCORD_BOT_TOKEN;
-    const mainGuildId = process.env.DISCORD_GUILD_ID;
+    const token = BOT_TOKEN;
+    const mainGuildId = GUILD_ID;
     const { guildId, channelId, embed, content } = req.body;
 
     if (!token) {
@@ -284,57 +427,6 @@ async function startServer() {
     }
   });
 
-  app.get("/api/callback", async (req, res) => {
-    const { code, access_token } = req.query;
-    
-    if (access_token) {
-      // If we got an access token directly (implicit flow or Supabase)
-      // We can just redirect to the dashboard
-      return res.redirect("/#access_token=" + access_token);
-    }
-
-    if (!code) {
-      return res.redirect("/callback?error=no_code_provided");
-    }
-
-    const clientId = process.env.DISCORD_CLIENT_ID;
-    const clientSecret = process.env.DISCORD_CLIENT_SECRET;
-    const appUrl = process.env.APP_URL || `http://localhost:${PORT}`;
-    const redirectUri = `${appUrl}/callback`;
-
-    try {
-      const tokenResponse = await fetch("https://discord.com/api/oauth2/token", {
-        method: "POST",
-        body: new URLSearchParams({
-          client_id: clientId || "",
-          client_secret: clientSecret || "",
-          grant_type: "authorization_code",
-          code: code as string,
-          redirect_uri: redirectUri,
-        }),
-        headers: {
-          "Content-Type": "application/x-www-form-urlencoded",
-        },
-      });
-
-      const tokenData = await tokenResponse.json();
-      if (tokenData.error) {
-        console.error("Discord token exchange error:", tokenData);
-        return res.redirect(`/callback?error=${tokenData.error}`);
-      }
-
-      // Redirect to dashboard with the access token in the hash so Supabase or our app can pick it up
-      res.redirect(`/#access_token=${tokenData.access_token}`);
-    } catch (error) {
-      console.error("Callback processing error:", error);
-      res.redirect("/callback?error=server_error");
-    }
-  });
-
-  app.get("/api/health", (req, res) => {
-    res.json({ status: "ok", timestamp: new Date().toISOString() });
-  });
-
   // Vite middleware for development
   if (process.env.NODE_ENV !== "production") {
     const vite = await createViteServer({
@@ -342,25 +434,6 @@ async function startServer() {
       appType: "spa",
     });
     app.use(vite.middlewares);
-
-    // SPA fallback for development
-    app.get('*', async (req, res, next) => {
-      const url = req.originalUrl;
-      
-      // Skip API routes
-      if (url.startsWith('/api/')) {
-        return next();
-      }
-
-      try {
-        let template = fs.readFileSync(path.resolve(__dirname, 'index.html'), 'utf-8');
-        template = await vite.transformIndexHtml(url, template);
-        res.status(200).set({ 'Content-Type': 'text/html' }).end(template);
-      } catch (e) {
-        vite.ssrFixStacktrace(e as Error);
-        next(e);
-      }
-    });
   } else {
     const distPath = path.join(process.cwd(), 'dist');
     app.use(express.static(distPath));

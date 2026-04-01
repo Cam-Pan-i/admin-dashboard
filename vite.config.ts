@@ -11,6 +11,8 @@ export default defineConfig(({mode}) => {
       'process.env.GEMINI_API_KEY': JSON.stringify(env.GEMINI_API_KEY || ''),
       'process.env.SUPABASE_URL': JSON.stringify(env.SUPABASE_URL || ''),
       'process.env.SUPABASE_KEY': JSON.stringify(env.SUPABASE_KEY || ''),
+      'process.env.DISCORD_GUILD_ID': JSON.stringify(env.DISCORD_GUILD_ID || ''),
+      'process.env.NOWPAYMENTS_API_KEY': JSON.stringify(env.NOWPAYMENTS_API_KEY || ''),
     },
     resolve: {
       alias: {
