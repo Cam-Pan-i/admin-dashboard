@@ -57,31 +57,35 @@ function DashboardApp() {
     };
 
     if (isSupabaseConfigured) {
+      // Initial session check
       supabase.auth.getSession().then(({ data: { session } }) => {
         if (session?.user) {
           setUser(session.user);
           updateRole(session.user.email);
-        } else if (!user) {
+        } else {
           setUser(null);
         }
+      }).catch(err => {
+        console.error("Auth session error:", err);
+        setUser(null);
       });
 
+      // Listen for changes
       const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
         if (session?.user) {
           setUser(session.user);
           updateRole(session.user.email);
-        } else if (!user) {
+        } else {
           setUser(null);
         }
       });
 
       return () => subscription.unsubscribe();
     } else {
-      if (isLoading && !user) {
-        setUser(null);
-      }
+      // Simulation mode
+      setUser(null);
     }
-  }, [setUser, setRole, user, isLoading, isHydrated]);
+  }, [isHydrated, setUser, setRole]);
 
   if (!isHydrated || isLoading) {
     return (
