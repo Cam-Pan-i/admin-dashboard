@@ -79,43 +79,51 @@ export const AdminConsole = () => {
       
       try {
         const response = await fetch('/api/console');
-        const newData: ConsoleData = await response.json();
+        const newData = await response.json();
+        
+        if (!response.ok) {
+          throw new Error(newData.error || 'Failed to fetch console data');
+        }
         
         setData(newData);
         setTick(t => t + 1);
         
         // Diffing logic
-        if (prevDataRef.current) {
+        if (prevDataRef.current && prevDataRef.current.recent_orders && newData.recent_orders) {
           const prev = prevDataRef.current;
           
           // Orders
-          const prevOrderIds = new Set(prev.recent_orders.map(o => o.payment_id));
-          newData.recent_orders.forEach(o => {
+          const prevOrderIds = new Set(prev.recent_orders.map((o: any) => o.payment_id));
+          newData.recent_orders.forEach((o: any) => {
             if (!prevOrderIds.has(o.payment_id)) {
               addLog('pay', `New Order: ${o.product} ($${o.price_usd}) - ${o.status.toUpperCase()}`);
             }
           });
 
           // Signals
-          const prevSignalIds = new Set(prev.recent_signals.map(s => s.id));
-          newData.recent_signals.forEach(s => {
-            if (!prevSignalIds.has(s.id)) {
-              addLog('system', `Signal: ${s.signal} - ${JSON.stringify(s.payload)}`);
-            }
-          });
+          if (prev.recent_signals && newData.recent_signals) {
+            const prevSignalIds = new Set(prev.recent_signals.map((s: any) => s.id));
+            newData.recent_signals.forEach((s: any) => {
+              if (!prevSignalIds.has(s.id)) {
+                addLog('system', `Signal: ${s.signal} - ${JSON.stringify(s.payload)}`);
+              }
+            });
+          }
 
           // Console commands from other users
-          const prevConsoleIds = new Set(prev.recent_console.map(c => c.id));
-          newData.recent_console.forEach(c => {
-            if (!prevConsoleIds.has(c.id) && c.user_id !== user?.id) {
-              addLog('info', `[${c.user_name}] > ${c.metadata.cmd}`);
-            }
-          });
+          if (prev.recent_console && newData.recent_console) {
+            const prevConsoleIds = new Set(prev.recent_console.map((c: any) => c.id));
+            newData.recent_console.forEach((c: any) => {
+              if (!prevConsoleIds.has(c.id) && c.user_id !== user?.id) {
+                addLog('info', `[${c.user_name}] > ${c.metadata.cmd}`);
+              }
+            });
+          }
         }
         
         prevDataRef.current = newData;
-      } catch (err) {
-        addLog('error', 'Poll failed: Connection lost');
+      } catch (err: any) {
+        addLog('error', `Poll failed: ${err.message || 'Connection lost'}`);
       }
     };
 
@@ -173,9 +181,11 @@ export const AdminConsole = () => {
         setLogs([]);
         break;
       case 'status':
-        if (data) {
+        if (data && data.services) {
           addLog('system', `Services: NP=${data.services.nowpayments.status.toUpperCase()}, SB=${data.services.supabase.status.toUpperCase()}, BOT=${data.services.bot.status.toUpperCase()}`);
           addLog('system', `Last Pulse: ${data.services.bot.seconds_ago !== null ? data.services.bot.seconds_ago + 's ago' : 'N/A'}`);
+        } else {
+          addLog('warn', 'Status data unavailable.');
         }
         break;
       case 'ping':
@@ -183,7 +193,7 @@ export const AdminConsole = () => {
         manualSync();
         break;
       case 'audit':
-        if (data?.recent_audits.length) {
+        if (data?.recent_audits && data.recent_audits.length) {
           data.recent_audits.forEach(a => addLog('ok', `[AUDIT] ${a.action}: ${a.details}`));
         } else {
           addLog('warn', 'No recent audit logs found.');
@@ -191,14 +201,14 @@ export const AdminConsole = () => {
         break;
       case 'logs':
         addLog('info', 'Fetching recent system logs...');
-        if (data?.recent_console.length) {
+        if (data?.recent_console && data.recent_console.length) {
           data.recent_console.forEach(c => addLog('info', `[${c.user_name}] > ${c.metadata.cmd}`));
         } else {
           addLog('warn', 'No recent console logs found.');
         }
         break;
       case 'orders':
-        if (data?.recent_orders.length) {
+        if (data?.recent_orders && data.recent_orders.length) {
           data.recent_orders.forEach(o => addLog('pay', `[ORDER] ${o.product} - ${o.status.toUpperCase()} ($${o.price_usd})`));
         } else {
           addLog('warn', 'No recent orders found.');
@@ -222,11 +232,12 @@ export const AdminConsole = () => {
     try {
       const response = await fetch('/api/console');
       const newData = await response.json();
+      if (!response.ok) throw new Error(newData.error || 'Sync failed');
       setData(newData);
       prevDataRef.current = newData;
       addLog('ok', 'Synchronization complete');
-    } catch {
-      addLog('error', 'Synchronization failed');
+    } catch (err: any) {
+      addLog('error', `Synchronization failed: ${err.message}`);
     } finally {
       setIsSyncing(false);
     }
@@ -247,7 +258,7 @@ export const AdminConsole = () => {
   return (
     <div className="flex flex-col h-[calc(100vh-120px)] bg-[#080b0f] border border-white/10 rounded-xl overflow-hidden font-mono">
       {/* Header */}
-      <div className="flex items-center justify-between px-6 py-3 bg-[#0d1117] border-bottom border-white/5">
+      <div className="flex items-center justify-between px-6 py-3 bg-[#0d1117] border-b border-white/5">
         <div className="flex flex-col">
           <div className="flex items-center gap-2 text-xs font-black tracking-widest text-white uppercase">
             SYSTEM <span className="text-blue-400">ADMINISTRATION</span> // CONSOLE
@@ -285,25 +296,25 @@ export const AdminConsole = () => {
           <div className="flex-1 overflow-y-auto custom-scrollbar">
             <HealthRow 
               name="NOWPayments" 
-              status={data?.services.nowpayments.status || 'sync'} 
-              detail={data?.services.nowpayments.latency_ms ? `${data.services.nowpayments.latency_ms}ms` : '—'} 
+              status={data?.services?.nowpayments?.status || 'sync'} 
+              detail={data?.services?.nowpayments?.latency_ms ? `${data.services.nowpayments.latency_ms}ms` : '—'} 
             />
             <HealthRow 
               name="Supabase" 
-              status={data?.services.supabase.status || 'sync'} 
-              detail={data?.services.supabase.latency_ms ? `${data.services.supabase.latency_ms}ms` : '—'} 
+              status={data?.services?.supabase?.status || 'sync'} 
+              detail={data?.services?.supabase?.latency_ms ? `${data.services.supabase.latency_ms}ms` : '—'} 
             />
             <HealthRow 
               name="Bot Heartbeat" 
-              status={data?.services.bot.status || 'sync'} 
-              detail={data?.services.bot.seconds_ago !== null ? `${data.services.bot.seconds_ago}s ago` : '—'} 
+              status={data?.services?.bot?.status || 'sync'} 
+              detail={data?.services?.bot?.seconds_ago !== null && data?.services?.bot?.seconds_ago !== undefined ? `${data.services.bot.seconds_ago}s ago` : '—'} 
             />
 
             <div className="mt-6 px-4 py-3 text-[9px] font-bold text-white/30 uppercase tracking-widest border-t border-white/5">
               Environment
             </div>
             <div className="px-4 py-2 space-y-1">
-              {data && Object.entries(data.env).map(([key, val]) => (
+              {data?.env && Object.entries(data.env).map(([key, val]) => (
                 <div key={key} className="flex justify-between text-[10px] gap-2">
                   <span className="text-blue-400/60 truncate">{key}</span>
                   <span className={(val as string).includes('✓') ? "text-green-400" : "text-red-400"}>
@@ -425,10 +436,10 @@ export const AdminConsole = () => {
                 Active Administrators
               </div>
               <div className="flex flex-wrap gap-2">
-                {data?.active_admins.length === 0 ? (
+                {!data?.active_admins || data.active_admins.length === 0 ? (
                   <div className="text-[10px] text-white/20 italic">NO_ADMINS_DETECTED</div>
                 ) : (
-                  data?.active_admins.map((admin, i) => (
+                  data.active_admins.map((admin, i) => (
                     <div key={i} className="flex items-center gap-2 px-2 py-1 bg-white/5 border border-white/10 rounded-md">
                       <div className="w-4 h-4 rounded-full bg-blue-400/20 flex items-center justify-center">
                         <User className="w-2.5 h-2.5 text-blue-400" />
@@ -446,7 +457,7 @@ export const AdminConsole = () => {
                 Recent Orders
               </div>
               <div className="space-y-2">
-                {data?.recent_orders.map((order, i) => (
+                {data?.recent_orders?.map((order, i) => (
                   <button 
                     key={i}
                     onClick={() => setSelectedOrder(order)}
