@@ -7,6 +7,8 @@
     { "source": "/css/main.css", "destination": "/api/index.ts" },
     { "source": "/api/callback", "destination": "/api/callback.py" },
     { "source": "/api/settings", "destination": "/api/settings.py" },
+    { "source": "/api/sentry", "destination": "/api/sentry.py" },
+    { "source": "/api/shop", "destination": "/api/shop.py" },
     { "source": "/api/(.*)", "destination": "/api/index.ts" },
     { "source": "/(.*)", "destination": "/index.html" }
   ]

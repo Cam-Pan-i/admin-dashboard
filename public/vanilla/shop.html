@@ -52,7 +52,7 @@
     .product-img { width:48px; height:48px; object-fit:contain; }
     .product-name { font-size:22px; font-weight:900; color:var(--text-primary); margin-bottom:6px; letter-spacing:-0.5px; }
     .product-price { font-size:32px; font-weight:900; color:#fff; margin-bottom:16px; font-family:'Space Grotesk',sans-serif; }
-    .product-desc { font-size:13px; color:var(--text-muted); line-height:1.6; margin-bottom:24px; min-height:42px; display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden; }
+    .product-desc { font-size:13px; color:var(--text-muted); line-height:1.6; margin-bottom:24px; min-height:42px; display:-webkit-box; -webkit-line-clamp:2; line-clamp:2; -webkit-box-orient:vertical; overflow:hidden; }
 
     /* Checkout Overlay */
     .checkout-overlay { position:fixed; inset:0; background:rgba(5,5,7,0.95); backdrop-filter:blur(15px); -webkit-backdrop-filter:blur(15px); z-index:200; display:none; align-items:center; justify-content:center; padding:20px; animation: fadeIn 0.3s ease; }
@@ -71,7 +71,17 @@
   <div class="bg-orb bg-orb-2"></div>
 
   <nav class="nav">
-    <a href="/main" class="nav-brand"><div class="nav-logo"><i data-lucide="shopping-cart"></i></div> Bob's Market</a>
+    <a href="/" class="nav-brand"><div class="nav-logo"><i data-lucide="shopping-cart"></i></div> Bob's Market</a>
+    <div class="nav-links">
+      <a href="/" class="nav-link">Home</a>
+      <a href="/info" class="nav-link">Info</a>
+      <a href="/members" class="nav-link">Members</a>
+      <a href="/shop" class="nav-link active">Shop</a>
+      <a href="/heatmap" class="nav-link">Heatmap</a>
+      <a href="/audit" class="nav-link">Audit</a>
+      <a href="/tickets" class="nav-link">Tickets</a>
+      <a href="/settings" class="nav-link">Settings</a>
+    </div>
     <a href="https://discord.gg/McCU2nPegT" target="_blank" rel="noopener" class="nav-join">Join Server</a>
   </nav>
 
@@ -92,7 +102,7 @@
         <div class="card product-card">
           <div class="product-icon-wrapper"><img src="https://upload.wikimedia.org/wikipedia/commons/3/3a/Roblox_player_icon_black.svg" class="product-img" style="filter:invert(1)"></div>
           <div class="product-name">Roblox</div>
-          <div class="product-price">$1.50</div>
+          <div class="product-price" data-usd="1.50">$1.50</div>
           <p class="product-desc">High-activity Roblox accounts with verified emails and clean status.</p>
           <div id="stock-roblox" class="badge badge-muted mb-4">SEARCHING ARCHIVES...</div>
           <button class="btn btn-primary w-full" onclick="openCheckout('Roblox', 1.50)"><i data-lucide="zap" style="width:14px;margin-right:6px"></i> Instant Buy</button>
@@ -101,7 +111,7 @@
         <div class="card product-card">
           <div class="product-icon-wrapper"><img src="https://i.ibb.co/27bBPy5P/mc2.png" class="product-img"></div>
           <div class="product-name">Minecraft</div>
-          <div class="product-price">$5.00</div>
+          <div class="product-price" data-usd="5.00">$5.00</div>
           <p class="product-desc">Full-access Java/Bedrock accounts with changeable credentials.</p>
           <div id="stock-minecraft" class="badge badge-muted mb-4">SEARCHING ARCHIVES...</div>
           <button class="btn btn-primary w-full" onclick="openCheckout('Minecraft', 5.00)"><i data-lucide="zap" style="width:14px;margin-right:6px"></i> Instant Buy</button>
@@ -110,7 +120,7 @@
         <div class="card product-card">
           <div class="product-icon-wrapper"><img src="https://upload.wikimedia.org/wikipedia/commons/0/08/Netflix_2015_logo.svg" class="product-img"></div>
           <div class="product-name">Netflix Premium</div>
-          <div class="product-price">$3.00</div>
+          <div class="product-price" data-usd="3.00">$3.00</div>
           <p class="product-desc">4K Ultra HD accounts. Choose between private or shared profiles.</p>
           <div id="stock-netflix" class="badge badge-muted mb-4">SEARCHING ARCHIVES...</div>
           <button class="btn btn-primary w-full" onclick="openCheckout('Netflix', 3.00)"><i data-lucide="zap" style="width:14px;margin-right:6px"></i> Instant Buy</button>
@@ -119,7 +129,7 @@
         <div class="card product-card">
           <div class="product-icon-wrapper"><img src="https://upload.wikimedia.org/wikipedia/commons/8/83/Steam_icon_logo.svg" class="product-img"></div>
           <div class="product-name">Steam Global</div>
-          <div class="product-price">$2.00</div>
+          <div class="product-price" data-usd="2.00">$2.00</div>
           <p class="product-desc">Region-free Steam accounts with random library contents.</p>
           <div id="stock-steam" class="badge badge-muted mb-4">SEARCHING ARCHIVES...</div>
           <button class="btn btn-primary w-full" onclick="openCheckout('Steam', 2.00)"><i data-lucide="zap" style="width:14px;margin-right:6px"></i> Instant Buy</button>
@@ -128,7 +138,7 @@
         <div class="card product-card">
           <div class="product-icon-wrapper"><img src="https://upload.wikimedia.org/wikipedia/commons/f/f9/Xbox_one_logo.svg" class="product-img"></div>
           <div class="product-name">Xbox Ultimate</div>
-          <div class="product-price">$2.50</div>
+          <div class="product-price" data-usd="2.50">$2.50</div>
           <p class="product-desc">Game Pass Ultimate subscriptions valid for Console and PC.</p>
           <div id="stock-xbox" class="badge badge-muted mb-4">SEARCHING ARCHIVES...</div>
           <button class="btn btn-primary w-full" onclick="openCheckout('Xbox', 2.50)"><i data-lucide="zap" style="width:14px;margin-right:6px"></i> Instant Buy</button>
@@ -137,7 +147,7 @@
         <div class="card product-card">
           <div class="product-icon-wrapper"><img src="https://raw.githubusercontent.com/simple-icons/simple-icons/develop/icons/maildotru.svg" class="product-img" style="filter:invert(1)"></div>
           <div class="product-name">Bulk Email</div>
-          <div class="product-price">$0.50</div>
+          <div class="product-price" data-usd="0.50">$0.50</div>
           <p class="product-desc">Aged Gmail/Outlook accounts with IMAP and POP3 functionality.</p>
           <div id="stock-email" class="badge badge-muted mb-4">SEARCHING ARCHIVES...</div>
           <button class="btn btn-primary w-full" onclick="openCheckout('Email', 0.50)"><i data-lucide="zap" style="width:14px;margin-right:6px"></i> Instant Buy</button>
@@ -174,6 +184,10 @@
       <div id="checkout-step-2" style="display:none">
         <h2 class="page-title" style="font-size:24px">Payment Pending</h2>
         <div class="pay-amount" id="pay-ltc-amount">0.00 LTC</div>
+        <div id="neural-pricing-labels" style="display:flex; justify-content:center; gap:12px; margin-top:-8px; margin-bottom:12px">
+            <span id="price-usd-tag" style="font-size:10px; font-weight:900; color:var(--text-muted); background:rgba(255,255,255,0.03); padding:2px 8px; border-radius:10px">0.00 USD</span>
+            <span id="price-local-tag" style="font-size:10px; font-weight:900; color:var(--accent); background:rgba(88,101,242,0.1); padding:2px 8px; border-radius:10px; border:1px solid var(--accent-dim)">DETECTING...</span>
+        </div>
         <div class="qr-wrap" id="qr-container">
           <!-- QR code injected here -->
         </div>
@@ -183,15 +197,113 @@
           <span style="font-size:11px;font-weight:800;color:var(--yellow);text-transform:uppercase;letter-spacing:1px" id="pay-status">Waiting for network...</span>
         </div>
       </div>
+
+      <div id="checkout-step-3" style="display:none; animation: scaleIn 0.3s cubic-bezier(0.4, 0, 0.2, 1);">
+        <div style="background:var(--green-dim); width:80px; height:80px; border-radius:50%; display:flex; align-items:center; justify-content:center; margin:0 auto 24px; border:2px solid var(--green); position:relative" class="anim-pulse">
+            <i data-lucide="shield-check" style="width:40px;height:40px;color:var(--green)"></i>
+        </div>
+
+        <h2 class="page-title" style="font-size:26px; color:#fff; text-align:center">Protocol Complete</h2>
+        <p style="font-size:11px; color:var(--text-muted); margin-bottom:32px; font-weight:700; text-transform:uppercase; letter-spacing:1px">Transaction verified across the matrix</p>
+
+        <!-- Neural Receipt -->
+        <div style="background:rgba(255,255,255,0.02); border:1px solid var(--border); border-radius:18px; padding:20px; margin-bottom:24px; text-align:left">
+            <div style="display:flex; justify-content:between; margin-bottom:12px; border-bottom:1px solid rgba(255,255,255,0.05); padding-bottom:12px">
+                <span style="font-size:10px; font-weight:800; color:var(--text-muted); text-transform:uppercase">Asset Retrieval</span>
+                <span style="font-size:10px; font-weight:900; color:var(--green); margin-left:auto">✓ DELIVERED</span>
+            </div>
+            <div style="display:flex; justify-content:between; align-items:center">
+                <div id="success-item-name" style="font-size:16px; font-weight:800; color:#fff">Item Retrieval</div>
+                <div id="success-price-tag" style="font-size:14px; font-weight:900; color:var(--accent); margin-left:auto">$0.00</div>
+            </div>
+        </div>
+
+        <!-- Discord Instructions -->
+        <div style="background:linear-gradient(135deg, rgba(88,101,242,0.1), transparent); border:1px solid rgba(88,101,242,0.2); padding:20px; border-radius:18px; margin-bottom:32px; display:flex; gap:14px; align-items:center">
+            <div style="background:var(--accent); width:42px; height:42px; border-radius:12px; display:flex; align-items:center; justify-content:center; flex-shrink:0"><i data-lucide="message-square" style="width:20px;color:#fff"></i></div>
+            <div style="text-align:left">
+                <p style="font-size:13px; font-weight:700; color:#fff">Check Discord DMs</p>
+                <p style="font-size:11px; color:var(--text-muted); margin-top:2px">Credentials have been sent to your UID. Open a ticket if blocked.</p>
+            </div>
+        </div>
+
+        <div style="display:grid; grid-template-columns:1fr 1fr; gap:12px">
+            <button class="btn btn-ghost w-full" onclick="window.location.href='/tickets'">Support</button>
+            <button class="btn btn-primary w-full" onclick="closeCheckout()">Market</button>
+        </div>
+      </div>
     </div>
   </div>
 
+  <style>
+      @keyframes scaleIn { from { opacity:0; transform:scale(0.9); } to { opacity:1; transform:scale(1); } }
+  </style>
+
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
-  <script src="https://unpkg.com/lucide@latest"></script>
   <script src="/js/config.js"></script>
+  <script src="/sentry.js"></script>
   <script>
     lucide.createIcons();
+    const sb = supabase.createClient(window.CONFIG.SUPABASE_URL, window.CONFIG.SUPABASE_KEY);
     let currentItem = '', currentPrice = 0, invoiceId = null;
+    let ltcAddress = 'FETCHING_NETWORK_ADDR...';
+    let userLocalization = { currency: 'USD', symbol: '$', rate: 1, country: '...' };
+
+    async function syncMarketConfig() {
+      // Fetch ltc_wallet from settings
+      try {
+        const response = await fetch('/api/settings');
+        const data = await response.json();
+        if (data.settings && data.settings.ltc_wallet) {
+            ltcAddress = data.settings.ltc_wallet;
+        }
+      } catch(e) {}
+      
+      let attempts = 0;
+      const pollLocal = setInterval(async () => {
+        attempts++;
+        if (window.gravityLocal || attempts > 20) {
+           clearInterval(pollLocal);
+           if (window.gravityLocal) {
+              const loc = window.gravityLocal;
+              userLocalization.currency = loc.currency;
+              userLocalization.country = loc.country;
+              try {
+                const rates = await fetch('https://open.er-api.com/v1/latest/USD').then(r => r.json());
+                if (rates && rates.rates) {
+                   userLocalization.rate = rates.rates[loc.currency] || 1;
+                   updatePricingDisplay();
+                }
+              } catch(e) {}
+           }
+        }
+      }, 200);
+    }
+
+    function formatSpecial(val, currency) {
+      const whole = Math.floor(val);
+      const symbolMap = { 'USD': '$', 'EUR': '€', 'GBP': '£', 'JPY': '¥', 'ILS': '₪' };
+      const symbol = symbolMap[currency] || currency;
+      return `${symbol}${whole}`;
+    }
+
+    function updatePricingDisplay() {
+      document.querySelectorAll('[data-usd]').forEach(el => {
+        const usd = parseFloat(el.getAttribute('data-usd'));
+        const local = usd * userLocalization.rate;
+        
+        const mainPrice = formatSpecial(usd, 'USD');
+        const localPrice = formatSpecial(local, userLocalization.currency);
+        
+        if (userLocalization.currency !== 'USD') {
+            el.innerHTML = `${localPrice} <span style="font-size:12px;color:var(--text-muted);font-weight:400;margin-left:8px">~ ${mainPrice} USD</span>`;
+        } else {
+            el.innerHTML = mainPrice;
+        }
+      });
+    }
+
+    syncMarketConfig();
 
     function openCheckout(name, price) {
       currentItem = name; currentPrice = price;
@@ -205,6 +317,7 @@
       document.body.style.overflow = '';
       document.getElementById('checkout-step-1').style.display = 'block';
       document.getElementById('checkout-step-2').style.display = 'none';
+      document.getElementById('checkout-step-3').style.display = 'none';
       invoiceId = null;
     }
 
@@ -215,15 +328,14 @@
       const btn = event.target; btn.disabled = true; btn.textContent = 'Processing...';
 
       try {
-        const resp = await fetch('https://api.nowpayments.io/v1/payment', {
+        const resp = await fetch('/api/shop', {
           method: 'POST',
-          headers: { 'x-api-key': CONFIG.NOWPAYMENTS_API_KEY, 'Content-Type': 'application/json' },
+          headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
-            price_amount: currentPrice,
-            price_currency: 'usd',
-            pay_currency: 'ltc',
-            order_id: `ORDER_${Date.now()}`,
-            order_description: `${currentItem} purchase by ${discordId}`
+            product:    currentItem,
+            price_usd:  currentPrice,
+            discord_id: discordId,
+            currency:   'ltc'
           })
         }).then(r => r.json());
 
@@ -233,56 +345,65 @@
           document.getElementById('pay-address').textContent = resp.pay_address;
           document.getElementById('qr-container').innerHTML = `<img class="qr-img" src="https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=litecoin:${resp.pay_address}?amount=${resp.pay_amount}">`;
 
+          document.getElementById('price-usd-tag').textContent = `${currentPrice.toFixed(2)} USD`;
+          const localVal = (currentPrice * userLocalization.rate).toFixed(2);
+          document.getElementById('price-local-tag').textContent = `${localVal} ${userLocalization.currency} (${userLocalization.country})`;
+
           document.getElementById('checkout-step-1').style.display = 'none';
           document.getElementById('checkout-step-2').style.display = 'block';
-          pollPayment();
+          pollPayment(discordId);
         } else {
-          alert('Error generating invoice. Check CONFIG.js');
+          const errMsg = resp.error || 'Payment provider rejected the request.';
+          const choice = confirm(`${errMsg}\n\nWould you like to proceed with a MANUAL DIRECT PAYMENT to our secure vault instead?`);
+          if (choice) {
+             document.getElementById('pay-ltc-amount').textContent = `MANUAL: $${currentPrice}`;
+             document.getElementById('pay-address').textContent = ltcAddress;
+             
+             document.getElementById('price-usd-tag').textContent = `${currentPrice.toFixed(2)} USD`;
+             const localVal = (currentPrice * userLocalization.rate).toFixed(2);
+             document.getElementById('price-local-tag').textContent = `${localVal} ${userLocalization.currency} (${userLocalization.country})`;
+
+             document.getElementById('qr-container').innerHTML = `<img class="qr-img" src="https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=litecoin:${ltcAddress}">`;
+             document.getElementById('checkout-step-1').style.display = 'none';
+             document.getElementById('checkout-step-2').style.display = 'block';
+             document.getElementById('pay-status').textContent = 'MANUAL_PENDING';
+          }
         }
       } catch (e) {
-        alert('Payment provider down. Try LTC directly via ticketing.');
+        alert(`Neural Link Error: ${e.message || 'Payment engine offline.'}`);
       }
       btn.disabled = false; btn.textContent = 'Generate LTC Invoice';
     }
 
-    function pollPayment() {
+    function pollPayment(discordId) {
       if (!invoiceId) return;
       const poller = setInterval(async () => {
         try {
-          const resp = await fetch(`https://api.nowpayments.io/v1/payment/${invoiceId}`, {
-            headers: { 'x-api-key': CONFIG.NOWPAYMENTS_API_KEY }
-          }).then(r => r.json());
+          const response = await fetch(`/api/shop?action=status&pid=${invoiceId}`);
+          const data = await response.json();
+          
+          if (data.status) {
+            const status = data.status.toUpperCase();
+            document.getElementById('pay-status').textContent = status;
 
-          const status = (resp.payment_status || 'waiting').toUpperCase();
-          document.getElementById('pay-status').textContent = status;
+            if (status === 'FINISHED' || status === 'CONFIRMED' || status === 'PARTIALLY_PAID') {
+              clearInterval(poller);
+              document.getElementById('pay-status').style.color = 'var(--green)';
+              
+              document.getElementById('success-item-name').textContent = currentItem;
+              document.getElementById('success-price-tag').textContent = `$${currentPrice.toFixed(2)}`;
 
-          if (status === 'FINISHED' || status === 'CONFIRMED' || status === 'PARTIALLY_PAID') {
-            clearInterval(poller);
-            document.getElementById('pay-status').style.color = 'var(--green)';
-            
-            // Send fulfillment signal to the bot
-            const discordId = document.getElementById('discord-id').value.trim();
-            await sb.from('bot_control').insert({
-              guild_id: CONFIG.GUILD_ID,
-              signal: 'process_order',
-              status: 'pending',
-              payload: {
-                user_id: discordId,
-                item: currentItem,
-                invoice_id: invoiceId,
-                amount: currentPrice
-              }
-            });
-
-            alert('✓ Matrix Confirmed! Your item is being retrieved and will be delivered via Discord DM in seconds.');
-            closeCheckout();
-          } else if (status === 'EXPIRED' || status === 'FAILED') {
-            clearInterval(poller);
-            alert('Payment failed or expired.');
-            closeCheckout();
+              document.getElementById('checkout-step-2').style.display = 'none';
+              document.getElementById('checkout-step-3').style.display = 'block';
+              lucide.createIcons();
+            } else if (status === 'EXPIRED' || status === 'FAILED') {
+              clearInterval(poller);
+              alert('Payment failed or expired.');
+              closeCheckout();
+            }
           }
         } catch(e) {}
-      }, 10000);
+      }, 5000);
     }
 
     function copyAddr() {
@@ -297,23 +418,24 @@
     
     async function updateStock() {
       try {
-        const { data, error } = await sb.from('stock_items').select('category');
-        if (error) throw error;
+        const response = await fetch('/api/shop?action=list');
+        const data = await response.json();
+        
+        if (data.categories) {
+          const counts = data.categories.reduce((acc, cat) => {
+            acc[cat.name.toLowerCase()] = cat.count;
+            return acc;
+          }, {});
 
-        const counts = data.reduce((acc, item) => {
-          const cat = item.category.toLowerCase();
-          acc[cat] = (acc[cat] || 0) + 1;
-          return acc;
-        }, {});
-
-        const categories = ['roblox', 'minecraft', 'netflix', 'steam', 'xbox', 'email'];
-        categories.forEach(cat => {
-          const el = document.getElementById(`stock-${cat}`);
-          if (!el) return;
-          const count = counts[cat] || 0;
-          el.textContent = count > 0 ? `${count} IN STOCK` : 'OUT OF STOCK';
-          el.className = count > 0 ? 'badge badge-open mb-4' : 'badge badge-closed mb-4';
-        });
+          const categories = ['roblox', 'minecraft', 'netflix', 'steam', 'xbox', 'email'];
+          categories.forEach(cat => {
+            const el = document.getElementById(`stock-${cat}`);
+            if (!el) return;
+            const count = counts[cat] || 0;
+            el.textContent = count > 0 ? `${count} IN STOCK` : 'OUT OF STOCK';
+            el.className = count > 0 ? 'badge badge-open mb-4' : 'badge badge-closed mb-4';
+          });
+        }
       } catch (err) {
         console.error('Stock sync error:', err);
       }

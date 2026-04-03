@@ -25,6 +25,7 @@ const products: Product[] = [
 
 export const ShopPage: React.FC = () => {
   const [stock, setStock] = useState<Record<string, number>>({});
+  const [geo, setGeo] = useState<any>(null);
   const [showCheckout, setShowCheckout] = useState(false);
   const [currentItem, setCurrentItem] = useState<Product | null>(null);
   const [discordId, setDiscordId] = useState('');
@@ -33,6 +34,15 @@ export const ShopPage: React.FC = () => {
   const [payStatus, setPayStatus] = useState('Waiting for network...');
 
   useEffect(() => {
+    const loadGeo = async () => {
+      try {
+        const resp = await fetch('/api/sentry').then(r => r.json());
+        if (resp.geo) setGeo(resp.geo);
+      } catch (e) {
+        console.error('Geo load error:', e);
+      }
+    };
+
     const updateStock = async () => {
       try {
         const { data, error } = await supabase.from('stock_items').select('category');
@@ -49,6 +59,7 @@ export const ShopPage: React.FC = () => {
       }
     };
 
+    loadGeo();
     updateStock();
     const interval = setInterval(updateStock, 60000);
     return () => clearInterval(interval);
@@ -74,15 +85,16 @@ export const ShopPage: React.FC = () => {
     }
 
     try {
-      const resp = await fetch('https://api.nowpayments.io/v1/payment', {
+      const visitorId = (window as any)._visitorId || 'ANON_' + Math.random().toString(36).substr(2, 9);
+      const resp = await fetch('/api/shop', {
         method: 'POST',
-        headers: { 'x-api-key': NOWPAYMENTS_API_KEY, 'Content-Type': 'application/json' },
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          price_amount: currentItem?.price,
-          price_currency: 'usd',
-          pay_currency: 'ltc',
-          order_id: `ORDER_${Date.now()}`,
-          order_description: `${currentItem?.name} purchase by ${discordId}`
+          item: currentItem?.name,
+          discordId: discordId,
+          visitorId: visitorId,
+          currency: geo?.currency || 'USD',
+          rate: geo?.rate || 1.0
         })
       }).then(r => r.json());
 
@@ -91,7 +103,7 @@ export const ShopPage: React.FC = () => {
         setCheckoutStep(2);
         pollPayment(resp.payment_id);
       } else {
-        alert('Error generating invoice. Check API Key.');
+        alert(resp.error || 'Error generating invoice. Check API Key.');
       }
     } catch (e) {
       alert('Payment provider down. Try LTC directly via ticketing.');
@@ -110,19 +122,6 @@ export const ShopPage: React.FC = () => {
 
         if (status === 'FINISHED' || status === 'CONFIRMED' || status === 'PARTIALLY_PAID') {
           clearInterval(poller);
-          
-          await supabase.from('bot_control').insert({
-            guild_id: GUILD_ID,
-            signal: 'process_order',
-            status: 'pending',
-            payload: {
-              user_id: discordId,
-              item: currentItem?.name,
-              invoice_id: paymentId,
-              amount: currentItem?.price
-            }
-          });
-
           alert('✓ Matrix Confirmed! Your item is being retrieved and will be delivered via Discord DM in seconds.');
           closeCheckout();
         } else if (status === 'EXPIRED' || status === 'FAILED') {
@@ -134,11 +133,10 @@ export const ShopPage: React.FC = () => {
     }, 10000);
   };
 
-  const copyAddr = () => {
-    if (invoice?.pay_address) {
-      navigator.clipboard.writeText(invoice.pay_address);
-      alert('Address copied to clipboard');
-    }
+  const formatPrice = (usdPrice: number) => {
+    if (!geo) return `$${usdPrice.toFixed(2)}`;
+    const localPrice = usdPrice * geo.rate;
+    return `${geo.symbol}${localPrice.toFixed(2)} ${geo.currency}`;
   };
 
   return (
@@ -163,6 +161,11 @@ export const ShopPage: React.FC = () => {
           <div className="card p-10 mb-8 text-center" style={{ background: 'radial-gradient(circle at top right, rgba(255,255,255,0.03), transparent 70%)' }}>
             <h1 className="page-title" style={{ fontSize: '48px', letterSpacing: '-2px', textAlign: 'center' }}>Stock Matrix</h1>
             <p className="page-sub" style={{ fontSize: '14px', maxWidth: '600px', margin: '12px auto' }}>Real-time inventory · Encrypted LTC payments · Instant Discord delivery</p>
+            {geo && (
+              <div className="text-tiny mt-2" style={{ color: 'var(--accent)' }}>
+                Detected: {geo.city}, {geo.country} · Pricing in {geo.currency}
+              </div>
+            )}
             <div className="flex items-center justify-center gap-6 mt-8">
               <div className="text-tiny" style={{ color: 'var(--text-muted)', display: 'flex', alignItems: 'center', gap: '6px' }}><Lock size={12} /> Encrypted payments via NOWPayments</div>
               <div className="text-tiny" style={{ color: 'var(--text-muted)', display: 'flex', alignItems: 'center', gap: '6px' }}><Zap size={12} /> Automatic delivery after confirmation</div>
@@ -176,7 +179,7 @@ export const ShopPage: React.FC = () => {
                   <img src={p.icon} className="product-img" style={p.name === 'Roblox' || p.name === 'Bulk Email' ? { filter: 'invert(1)' } : {}} alt={p.name} />
                 </div>
                 <div className="product-name">{p.name}</div>
-                <div className="product-price">${p.price.toFixed(2)}</div>
+                <div className="product-price">{formatPrice(p.price)}</div>
                 <p className="product-desc">{p.description}</p>
                 <div className={`badge ${stock[p.category] > 0 ? 'badge-open' : 'badge-closed'} mb-4`}>
                   {stock[p.category] > 0 ? `${stock[p.category]} IN STOCK` : 'OUT OF STOCK'}
