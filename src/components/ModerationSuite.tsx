@@ -47,10 +47,13 @@ const ActionBadge = ({ action }: { action: string }) => {
   );
 };
 
+import { supabase, safeFetch } from '../lib/supabase';
+
 export const ModerationSuite = () => {
   const [activeTab, setActiveTab] = useState<'center' | 'logs' | 'protection'>('center');
   const [logs, setLogs] = useState<AuditLog[]>([]);
   const [loadingLogs, setLoadingLogs] = useState(false);
+  const [metrics, setMetrics] = useState({ bans: 0, warns: 0, mutes: 0, kicks: 0 });
   
   // Action Center State
   const [targetId, setTargetId] = useState('');
@@ -62,11 +65,21 @@ export const ModerationSuite = () => {
   const fetchLogs = async () => {
     setLoadingLogs(true);
     try {
-      const response = await fetch('/api/discord/audit-logs');
-      if (response.ok) {
-        const data = await response.json();
-        setLogs(data);
-      }
+      const data = await safeFetch(
+        supabase.from('audit_log').select('*').order('timestamp', { ascending: false }).limit(50),
+        [],
+        'Fetch audit logs'
+      );
+      
+      const formattedLogs = data.map((log: any) => ({
+        id: log.id.toString(),
+        mod: log.user_name || 'System',
+        user: log.details?.split(' ')[0] || 'Unknown',
+        action: log.action || 'Action',
+        reason: log.details || 'No reason provided',
+        time: log.timestamp ? new Date(log.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : '-'
+      }));
+      setLogs(formattedLogs);
     } catch (error) {
       console.error("Failed to fetch audit logs:", error);
     } finally {
@@ -74,10 +87,27 @@ export const ModerationSuite = () => {
     }
   };
 
+  const fetchMetrics = async () => {
+    const [bans, warns, mutes, kicks] = await Promise.all([
+      supabase.from('audit_log').select('*', { count: 'exact', head: true }).eq('action', 'ban'),
+      supabase.from('audit_log').select('*', { count: 'exact', head: true }).eq('action', 'warn'),
+      supabase.from('audit_log').select('*', { count: 'exact', head: true }).eq('action', 'mute'),
+      supabase.from('audit_log').select('*', { count: 'exact', head: true }).eq('action', 'kick')
+    ]);
+
+    setMetrics({
+      bans: bans.count || 0,
+      warns: warns.count || 0,
+      mutes: mutes.count || 0,
+      kicks: kicks.count || 0
+    });
+  };
+
   useEffect(() => {
     if (activeTab === 'logs') {
       fetchLogs();
     }
+    fetchMetrics();
   }, [activeTab]);
 
   const handleExecuteAction = async () => {
@@ -263,19 +293,19 @@ export const ModerationSuite = () => {
               <div className="grid grid-cols-2 gap-4">
                 <div className="p-4 rounded-lg bg-white/[0.02] border border-white/5">
                   <p className="text-[8px] text-text-secondary font-bold uppercase tracking-[0.2em]">Bans</p>
-                  <p className="text-2xl font-bold font-mono tracking-tighter">1,242</p>
+                  <p className="text-2xl font-bold font-mono tracking-tighter">{metrics.bans.toLocaleString()}</p>
                 </div>
                 <div className="p-4 rounded-lg bg-white/[0.02] border border-white/5">
                   <p className="text-[8px] text-text-secondary font-bold uppercase tracking-[0.2em]">Warns</p>
-                  <p className="text-2xl font-bold font-mono tracking-tighter">3,891</p>
+                  <p className="text-2xl font-bold font-mono tracking-tighter">{metrics.warns.toLocaleString()}</p>
                 </div>
                 <div className="p-4 rounded-lg bg-white/[0.02] border border-white/5">
                   <p className="text-[8px] text-text-secondary font-bold uppercase tracking-[0.2em]">Mutes</p>
-                  <p className="text-2xl font-bold font-mono tracking-tighter">856</p>
+                  <p className="text-2xl font-bold font-mono tracking-tighter">{metrics.mutes.toLocaleString()}</p>
                 </div>
                 <div className="p-4 rounded-lg bg-white/[0.02] border border-white/5">
                   <p className="text-[8px] text-text-secondary font-bold uppercase tracking-[0.2em]">Kicks</p>
-                  <p className="text-2xl font-bold font-mono tracking-tighter">412</p>
+                  <p className="text-2xl font-bold font-mono tracking-tighter">{metrics.kicks.toLocaleString()}</p>
                 </div>
               </div>
             </div>

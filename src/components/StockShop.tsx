@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { 
   Package, 
   ShoppingCart, 
@@ -11,27 +11,42 @@ import {
   CreditCard,
   Wallet,
   Clock,
-  CheckCircle2
+  CheckCircle2,
+  RefreshCw,
+  Loader2
 } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { cn } from '../lib/utils';
-
-const inventory = [
-  { id: 'S-001', name: 'Nitro Basic (Monthly)', category: 'Subscriptions', stock: 42, price: '$2.99', status: 'In Stock' },
-  { id: 'S-002', name: 'Nitro Full (Monthly)', category: 'Subscriptions', stock: 12, price: '$9.99', status: 'Low Stock' },
-  { id: 'S-003', name: 'Spotify Premium (1Y)', category: 'Accounts', stock: 8, price: '$15.00', status: 'Low Stock' },
-  { id: 'S-004', name: 'Netflix UHD (1M)', category: 'Accounts', stock: 0, price: '$4.50', status: 'Out of Stock' },
-  { id: 'S-005', name: 'Steam $50 Gift Card', category: 'Gift Cards', stock: 25, price: '$48.00', status: 'In Stock' },
-];
-
-const orders = [
-  { id: 'ORD-8291', user: 'Kaka#0001', product: 'Nitro Full', price: '$9.99', method: 'BTC', status: 'delivered', time: '10m ago' },
-  { id: 'ORD-8292', user: 'Buyer#1234', product: 'Spotify Premium', price: '$15.00', method: 'LTC', status: 'confirmed', time: '25m ago' },
-  { id: 'ORD-8293', user: 'User#5678', product: 'Steam $50', price: '$48.00', method: 'SOL', status: 'waiting', time: '1h ago' },
-];
+import { supabase, safeFetch } from '../lib/supabase';
 
 export const StockShop = () => {
   const [activeTab, setActiveTab] = useState<'inventory' | 'orders' | 'config'>('inventory');
+  const [inventory, setInventory] = useState<any[]>([]);
+  const [orders, setOrders] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [metrics, setMetrics] = useState({ totalItems: 0, totalValue: 0, lowStock: 0 });
+
+  const fetchShopData = async () => {
+    setLoading(true);
+    const [productsData, ordersData] = await Promise.all([
+      safeFetch(supabase.from('products').select('*').order('created_at', { ascending: false }), [], 'Fetch products'),
+      safeFetch(supabase.from('orders').select('*').order('created_at', { ascending: false }), [], 'Fetch orders')
+    ]);
+
+    setInventory(productsData);
+    setOrders(ordersData);
+
+    const totalItems = productsData.reduce((acc: number, curr: any) => acc + (curr.stock || 0), 0);
+    const totalValue = productsData.reduce((acc: number, curr: any) => acc + ((curr.price || 0) * (curr.stock || 0)), 0);
+    const lowStock = productsData.filter((p: any) => p.stock > 0 && p.stock < 10).length;
+
+    setMetrics({ totalItems, totalValue, lowStock });
+    setLoading(false);
+  };
+
+  useEffect(() => {
+    fetchShopData();
+  }, []);
 
   return (
     <div className="space-y-8 animate-in fade-in duration-500">
@@ -72,8 +87,8 @@ export const StockShop = () => {
                 </div>
                 <h3 className="font-bold">Total Items</h3>
               </div>
-              <p className="text-3xl font-bold">1,284</p>
-              <p className="text-xs text-text-secondary mt-1">Across 12 categories</p>
+              <p className="text-3xl font-bold">{loading ? '...' : metrics.totalItems.toLocaleString()}</p>
+              <p className="text-xs text-text-secondary mt-1">Across {inventory.length} products</p>
             </div>
             <div className="glass p-6 rounded-2xl border border-border">
               <div className="flex items-center gap-3 mb-4">
@@ -82,7 +97,7 @@ export const StockShop = () => {
                 </div>
                 <h3 className="font-bold">Total Value</h3>
               </div>
-              <p className="text-3xl font-bold">$4,829.50</p>
+              <p className="text-3xl font-bold">${loading ? '...' : metrics.totalValue.toLocaleString()}</p>
               <p className="text-xs text-text-secondary mt-1">Estimated retail value</p>
             </div>
             <div className="glass p-6 rounded-2xl border border-border">
@@ -92,7 +107,7 @@ export const StockShop = () => {
                 </div>
                 <h3 className="font-bold">Low Stock</h3>
               </div>
-              <p className="text-3xl font-bold">8</p>
+              <p className="text-3xl font-bold">{loading ? '...' : metrics.lowStock}</p>
               <p className="text-xs text-text-secondary mt-1">Items requiring restock</p>
             </div>
           </div>
@@ -106,10 +121,19 @@ export const StockShop = () => {
                 className="w-full bg-bg-secondary border border-border rounded-xl pl-10 pr-4 py-2.5 text-sm focus:outline-none focus:border-white/50 transition-all"
               />
             </div>
-            <button className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-white text-black font-bold text-sm hover:bg-white/90 transition-all">
-              <Plus size={18} />
-              Add Item
-            </button>
+            <div className="flex gap-2">
+              <button 
+                onClick={fetchShopData}
+                disabled={loading}
+                className="p-2.5 rounded-xl glass border border-border text-text-secondary hover:text-white transition-all disabled:opacity-50"
+              >
+                <RefreshCw size={18} className={cn(loading && "animate-spin")} />
+              </button>
+              <button className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-white text-black font-bold text-sm hover:bg-white/90 transition-all">
+                <Plus size={18} />
+                Add Item
+              </button>
+            </div>
           </div>
 
           <div className="glass rounded-2xl border border-border overflow-hidden">
@@ -125,7 +149,14 @@ export const StockShop = () => {
                 </tr>
               </thead>
               <tbody className="divide-y divide-border">
-                {inventory.map((item) => (
+                {loading && inventory.length === 0 ? (
+                  <tr>
+                    <td colSpan={6} className="px-6 py-20 text-center">
+                      <Loader2 size={32} className="animate-spin text-white/10 mx-auto mb-4" />
+                      <p className="text-[10px] font-bold uppercase tracking-[0.3em] text-text-secondary">Syncing Inventory Matrix...</p>
+                    </td>
+                  </tr>
+                ) : inventory.map((item) => (
                   <tr key={item.id} className="hover:bg-white/5 transition-colors group">
                     <td className="px-6 py-4">
                       <div className="flex items-center gap-3">
@@ -139,27 +170,29 @@ export const StockShop = () => {
                       </div>
                     </td>
                     <td className="px-6 py-4">
-                      <span className="text-xs px-2 py-1 rounded-md bg-bg-tertiary border border-border">{item.category}</span>
+                      <span className="text-xs px-2 py-1 rounded-md bg-bg-tertiary border border-border">{item.category || 'General'}</span>
                     </td>
                     <td className="px-6 py-4">
                       <span className={cn(
                         "text-xs font-bold",
-                        item.stock === 0 ? "text-white/30" : item.stock < 15 ? "text-white/60" : "text-white"
+                        item.stock === 0 ? "text-white/30" : item.stock < 10 ? "text-white/60" : "text-white"
                       )}>
                         {item.stock}
                       </span>
                     </td>
                     <td className="px-6 py-4">
-                      <span className="text-xs font-bold text-white">{item.price}</span>
+                      <span className="text-xs font-bold text-white">${item.price}</span>
                     </td>
                     <td className="px-6 py-4">
                       <div className="flex items-center gap-2">
                         <div className={cn(
                           "w-2 h-2 rounded-full",
-                          item.status === 'In Stock' ? "bg-white" : 
-                          item.status === 'Low Stock' ? "bg-white/50" : "bg-white/20"
+                          item.stock > 10 ? "bg-white" : 
+                          item.stock > 0 ? "bg-white/50" : "bg-white/20"
                         )}></div>
-                        <span className="text-xs text-text-secondary">{item.status}</span>
+                        <span className="text-xs text-text-secondary">
+                          {item.stock > 10 ? 'In Stock' : item.stock > 0 ? 'Low Stock' : 'Out of Stock'}
+                        </span>
                       </div>
                     </td>
                     <td className="px-6 py-4">
@@ -196,29 +229,36 @@ export const StockShop = () => {
                 </tr>
               </thead>
               <tbody className="divide-y divide-border">
-                {orders.map((order) => (
+                {loading && orders.length === 0 ? (
+                  <tr>
+                    <td colSpan={7} className="px-6 py-20 text-center">
+                      <Loader2 size={32} className="animate-spin text-white/10 mx-auto mb-4" />
+                      <p className="text-[10px] font-bold uppercase tracking-[0.3em] text-text-secondary">Decrypting Order History...</p>
+                    </td>
+                  </tr>
+                ) : orders.map((order) => (
                   <tr key={order.id} className="hover:bg-white/5 transition-colors group">
                     <td className="px-6 py-4">
-                      <span className="text-xs font-mono font-bold">{order.id}</span>
+                      <span className="text-xs font-mono font-bold">ORD-{order.id.toString().slice(-4)}</span>
                     </td>
                     <td className="px-6 py-4">
                       <div className="flex items-center gap-2">
                         <div className="w-6 h-6 rounded-full bg-bg-tertiary border border-border overflow-hidden">
-                          <img src={`https://api.dicebear.com/7.x/avataaars/svg?seed=${order.user}`} alt="" referrerPolicy="no-referrer" />
+                          <img src={`https://api.dicebear.com/7.x/avataaars/svg?seed=${order.user_name}`} alt="" referrerPolicy="no-referrer" />
                         </div>
-                        <span className="text-xs font-bold">{order.user}</span>
+                        <span className="text-xs font-bold">{order.user_name}</span>
                       </div>
                     </td>
                     <td className="px-6 py-4">
-                      <span className="text-xs">{order.product}</span>
+                      <span className="text-xs">{order.product_name}</span>
                     </td>
                     <td className="px-6 py-4">
-                      <span className="text-xs font-bold">{order.price}</span>
+                      <span className="text-xs font-bold">${order.price}</span>
                     </td>
                     <td className="px-6 py-4">
                       <div className="flex items-center gap-1.5 text-xs text-text-secondary">
                         <Wallet size={12} />
-                        {order.method}
+                        {order.payment_method || 'Crypto'}
                       </div>
                     </td>
                     <td className="px-6 py-4">
@@ -232,7 +272,7 @@ export const StockShop = () => {
                       </span>
                     </td>
                     <td className="px-6 py-4">
-                      <span className="text-[10px] text-text-secondary">{order.time}</span>
+                      <span className="text-[10px] text-text-secondary">{order.created_at ? new Date(order.created_at).toLocaleTimeString() : '-'}</span>
                     </td>
                   </tr>
                 ))}

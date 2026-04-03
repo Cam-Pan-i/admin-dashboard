@@ -1,12 +1,23 @@
-import React from 'react';
-import { Search, Bell, ChevronDown, Command, LogOut, Menu, X, AlertTriangle } from 'lucide-react';
+import React, { useState, useEffect } from 'react';
+import { Search, Bell, ChevronDown, Command, LogOut, Menu, X, AlertTriangle, Loader2 } from 'lucide-react';
 import { useAppStore } from '../store/useAppStore';
 import { useAuthStore } from '../store/useAuthStore';
-import { isSupabaseConfigured } from '../lib/supabase';
+import { supabase, safeFetch, isSupabaseConfigured } from '../lib/supabase';
 
 export const Topbar = () => {
   const { currentGuild, isMobileMenuOpen, setMobileMenuOpen } = useAppStore();
-  const { user, role, signOut } = useAuthStore();
+  const { user, roles, signOut } = useAuthStore();
+  const [serverName, setServerName] = useState('BOB\'S EMPORIUM');
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const fetchSettings = async () => {
+      const data = await safeFetch(supabase.from('settings').select('server_name').single(), { server_name: 'BOB\'S EMPORIUM' }, 'Fetch server name');
+      if (data?.server_name) setServerName(data.server_name);
+      setLoading(false);
+    };
+    fetchSettings();
+  }, []);
 
   const handleLogout = async () => {
     await signOut();
@@ -24,12 +35,14 @@ export const Topbar = () => {
 
         <div className="hidden md:flex items-center gap-4">
           <div className="flex items-center gap-3 px-4 py-2 rounded-lg bg-white/[0.02] border border-white/[0.05] hover:border-white/20 transition-all group cursor-pointer">
-            <div className="w-6 h-6 rounded bg-white text-black flex items-center justify-center text-[10px] font-black tracking-tighter">
-              BS
+            <div className="w-6 h-6 rounded bg-white text-black flex items-center justify-center text-[10px] font-black tracking-tighter uppercase">
+              {serverName.substring(0, 2)}
             </div>
             <div className="flex flex-col">
-              <span className="text-[11px] font-black uppercase tracking-wider leading-none">BOB'S EMPORIUM</span>
-              <span className="text-[9px] text-text-secondary font-bold mt-0.5">PRODUCTION INSTANCE</span>
+              <span className="text-[11px] font-black uppercase tracking-wider leading-none">
+                {loading ? <Loader2 size={10} className="animate-spin" /> : serverName}
+              </span>
+              <span className="text-[9px] text-text-secondary font-bold mt-0.5 uppercase">PRODUCTION INSTANCE</span>
             </div>
             <ChevronDown size={12} className="text-text-secondary group-hover:text-white transition-colors ml-2" />
           </div>

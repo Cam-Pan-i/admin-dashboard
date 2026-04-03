@@ -1,4 +1,4 @@
-import React, { useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { 
   Home,
@@ -21,6 +21,8 @@ import {
 import { useAppStore } from '../store/useAppStore';
 import { useAuthStore } from '../store/useAuthStore';
 import { cn } from '../lib/utils';
+import { supabase, safeFetch } from '../lib/supabase';
+import { getPrimaryRole } from '../lib/accounts';
 
 const navItems = [
   { id: 'dashboard', label: 'Command Center', icon: LayoutDashboard },
@@ -38,7 +40,18 @@ const navItems = [
 
 export const Sidebar = ({ activeTab, setActiveTab }: { activeTab: string, setActiveTab: (id: string) => void }) => {
   const { isSidebarCollapsed, setSidebarCollapsed, isMobileMenuOpen, setMobileMenuOpen } = useAppStore();
-  const { user, role } = useAuthStore();
+  const { user, roles } = useAuthStore();
+  const [serverName, setServerName] = useState('BOB');
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const fetchSettings = async () => {
+      const data = await safeFetch(supabase.from('settings').select('server_name').single(), { server_name: 'BOB' }, 'Fetch server name');
+      if (data?.server_name) setServerName(data.server_name);
+      setLoading(false);
+    };
+    fetchSettings();
+  }, []);
 
   const handleTabClick = (id: string) => {
     setActiveTab(id);
@@ -82,8 +95,8 @@ export const Sidebar = ({ activeTab, setActiveTab }: { activeTab: string, setAct
                 animate={{ opacity: 1, x: 0 }}
                 className="flex flex-col"
               >
-                <span className="font-black text-sm tracking-[0.2em] leading-none">BOB</span>
-                <span className="text-[10px] text-text-secondary font-bold tracking-wider mt-1">MASTER ADMIN</span>
+                <span className="font-black text-sm tracking-[0.2em] leading-none uppercase">{loading ? '...' : serverName}</span>
+                <span className="text-[10px] text-text-secondary font-bold tracking-wider mt-1 uppercase">{roles ? getPrimaryRole(roles) : 'MASTER ADMIN'}</span>
               </motion.div>
             )}
           </div>
@@ -155,7 +168,7 @@ export const Sidebar = ({ activeTab, setActiveTab }: { activeTab: string, setAct
                 <p className="text-[11px] font-black truncate tracking-wider uppercase">{user?.email?.split('@')[0]}</p>
                 <div className="flex items-center gap-1.5 mt-0.5">
                   <div className="w-1 h-1 rounded-full bg-emerald-500 animate-pulse" />
-                  <p className="text-[9px] text-text-secondary truncate uppercase font-bold tracking-wider">{role}</p>
+                  <p className="text-[9px] text-text-secondary truncate uppercase font-bold tracking-wider">{roles ? getPrimaryRole(roles) : 'USER'}</p>
                 </div>
               </div>
             )}

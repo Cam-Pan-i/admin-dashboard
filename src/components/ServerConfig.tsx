@@ -40,6 +40,8 @@ interface DiscordChannel {
   type: number;
 }
 
+import { supabase, safeFetch } from '../lib/supabase';
+
 export const ServerConfig = () => {
   const [activeTab, setActiveTab] = useState<'identity' | 'permissions' | 'modules' | 'alerts' | 'discord'>('identity');
   const [discordData, setDiscordData] = useState<DiscordGuild | null>(null);
@@ -53,10 +55,9 @@ export const ServerConfig = () => {
   const fetchSettings = async () => {
     setLoading(true);
     try {
-      const response = await fetch('/api/settings');
-      const data = await response.json();
-      if (data.settings) {
-        setSettings(data.settings);
+      const data = await safeFetch(supabase.from('settings').select('*').single(), null, 'Fetch settings');
+      if (data) {
+        setSettings(data);
       }
     } catch (err: any) {
       console.error("Failed to fetch settings:", err);
@@ -70,18 +71,14 @@ export const ServerConfig = () => {
     setError(null);
     setSuccess(null);
     try {
-      const response = await fetch('/api/settings', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(payload)
-      });
-      const data = await response.json();
-      if (data.ok) {
-        setSuccess('Settings updated successfully');
-        fetchSettings();
-      } else {
-        throw new Error(data.error || 'Failed to update settings');
-      }
+      const { error: upsertError } = await supabase
+        .from('settings')
+        .upsert({ id: settings?.id || 1, ...payload, updated_at: new Date().toISOString() });
+      
+      if (upsertError) throw upsertError;
+      
+      setSuccess('Settings updated successfully');
+      fetchSettings();
     } catch (err: any) {
       setError(err.message);
     } finally {
@@ -93,20 +90,14 @@ export const ServerConfig = () => {
     setLoading(true);
     setError(null);
     try {
-      const [guildRes, channelsRes] = await Promise.all([
-        fetch('/api/discord/guild'),
-        fetch('/api/discord/channels')
+      const [guildData, channelsData] = await Promise.all([
+        safeFetch(supabase.from('guild_info').select('*').single(), null, 'Fetch guild info'),
+        safeFetch(supabase.from('channels').select('*'), [], 'Fetch channels')
       ]);
-
-      if (!guildRes.ok) {
-        const data = await guildRes.json();
-        throw new Error(data.error || 'Failed to fetch Discord data');
+      
+      if (guildData) {
+        setDiscordData(guildData);
       }
-      
-      const guildData = await guildRes.json();
-      const channelsData = await channelsRes.json();
-      
-      setDiscordData(guildData);
       setChannels(channelsData);
     } catch (err: any) {
       setError(err.message);

@@ -11,8 +11,8 @@ import {
   ArrowRight
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { supabase } from '../lib/supabase';
 import { cn } from '../lib/utils';
+import { supabase, safeFetch } from '../lib/supabase';
 
 interface Product {
   id: string;
@@ -31,31 +31,36 @@ export const PublicShop: React.FC = () => {
   const [discordId, setDiscordId] = useState('');
   const [checkoutStep, setCheckoutStep] = useState<'details' | 'payment' | 'success'>('details');
   const [paymentDetails, setPaymentDetails] = useState<{ address: string; amount: string } | null>(null);
+  const [stats, setStats] = useState({ activeNodes: '124', totalStock: '1,284', verifiedTrans: '8,291', uptime: '99.9%' });
 
   useEffect(() => {
-    const fetchProducts = async () => {
+    const fetchShopData = async () => {
+      setLoading(true);
       try {
-        const { data, error } = await supabase
-          .from('products')
-          .select('*')
-          .order('created_at', { ascending: false });
-        
-        if (error) throw error;
-        setProducts(data || []);
-      } catch (err) {
-        console.error('Error fetching products:', err);
-        // Fallback mock data if table doesn't exist
-        setProducts([
-          { id: '1', name: 'Discord Nitro (1 Month)', price: 2.99, stock: 42, category: 'Subscriptions', image_url: 'https://cdn.discordapp.com/emojis/848583273270902794.png', description: 'Full Discord Nitro subscription for 1 month.' },
-          { id: '2', name: 'Spotify Premium (1 Year)', price: 15.00, stock: 8, category: 'Accounts', image_url: 'https://cdn.discordapp.com/emojis/755823155714031637.png', description: '12 months of Spotify Premium on your own account.' },
-          { id: '3', name: 'Netflix UHD (Monthly)', price: 4.50, stock: 12, category: 'Accounts', image_url: 'https://cdn.discordapp.com/emojis/755823155714031637.png', description: 'Shared Netflix UHD account with 1 month warranty.' },
+        const [productsData, ordersResult, statsData] = await Promise.all([
+          safeFetch(supabase.from('products').select('*').order('created_at', { ascending: false }), [], 'Fetch products'),
+          supabase.from('orders').select('*', { count: 'exact', head: true }).eq('status', 'delivered'),
+          safeFetch(supabase.from('server_stats').select('*').single(), null, 'Fetch server stats')
         ]);
+        
+        setProducts(productsData);
+        
+        const totalStock = productsData.reduce((acc: number, curr: any) => acc + (curr.stock || 0), 0);
+        
+        setStats({
+          activeNodes: statsData?.online_members?.toString() || '124',
+          totalStock: totalStock.toLocaleString(),
+          verifiedTrans: ordersResult.count?.toLocaleString() || '8,291',
+          uptime: '99.9%'
+        });
+      } catch (err) {
+        console.error('Error fetching shop data:', err);
       } finally {
         setLoading(false);
       }
     };
 
-    fetchProducts();
+    fetchShopData();
 
     // Subscribe to stock updates
     const channel = supabase
@@ -113,10 +118,10 @@ export const PublicShop: React.FC = () => {
       {/* Stock Matrix */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
         {[
-          { label: 'Active Nodes', value: '124', color: 'emerald' },
-          { label: 'Total Stock', value: '1,284', color: 'white' },
-          { label: 'Verified Trans.', value: '8,291', color: 'white' },
-          { label: 'Uptime', value: '99.9%', color: 'emerald' },
+          { label: 'Active Nodes', value: stats.activeNodes, color: 'emerald' },
+          { label: 'Total Stock', value: stats.totalStock, color: 'white' },
+          { label: 'Verified Trans.', value: stats.verifiedTrans, color: 'white' },
+          { label: 'Uptime', value: stats.uptime, color: 'emerald' },
         ].map((stat, i) => (
           <div key={i} className="glass border border-white/5 rounded-3xl p-6 text-center">
             <div className="text-2xl font-mono font-bold mb-1">{stat.value}</div>

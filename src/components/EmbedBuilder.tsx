@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { 
   Layout, 
   Type, 
@@ -14,11 +14,13 @@ import {
   AlertCircle,
   CheckCircle2,
   Info,
-  Hash
+  Hash,
+  ChevronDown
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { cn } from '../lib/utils';
 import { generateResponse } from '../services/geminiService';
+import { supabase, safeFetch } from '../lib/supabase';
 
 interface EmbedData {
   title: string;
@@ -44,6 +46,12 @@ interface EmbedData {
   fields: { name: string; value: string; inline: boolean }[];
 }
 
+interface DiscordChannel {
+  id: string;
+  name: string;
+  type: number;
+}
+
 const initialEmbed: EmbedData = {
   title: 'New Embed Title',
   description: 'This is a description for your Discord embed.',
@@ -61,12 +69,24 @@ export const EmbedBuilder: React.FC = () => {
   const [embed, setEmbed] = useState<EmbedData>(initialEmbed);
   const [guildId, setGuildId] = useState('');
   const [channelId, setChannelId] = useState('');
+  const [channels, setChannels] = useState<DiscordChannel[]>([]);
+  const [loadingChannels, setLoadingChannels] = useState(true);
   const [content, setContent] = useState('');
   const [isSending, setIsSending] = useState(false);
   const [status, setStatus] = useState<{ success: boolean; message: string } | null>(null);
   const [aiPrompt, setAiPrompt] = useState('');
   const [isAiGenerating, setIsAiGenerating] = useState(false);
   const [activeTab, setActiveTab] = useState<'editor' | 'preview' | 'json'>('editor');
+
+  useEffect(() => {
+    const fetchChannels = async () => {
+      setLoadingChannels(true);
+      const data = await safeFetch(supabase.from('channels').select('*'), [], 'Fetch channels');
+      setChannels(data);
+      setLoadingChannels(false);
+    };
+    fetchChannels();
+  }, []);
 
   const handleSend = async () => {
     if (!channelId) {
@@ -228,17 +248,25 @@ export const EmbedBuilder: React.FC = () => {
                 </div>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div className="space-y-2">
-                    <label className="text-[10px] font-bold text-text-secondary uppercase tracking-widest">Guild ID (Optional)</label>
-                    <input 
-                      type="text" 
-                      placeholder="Defaults to MAIN_GUILD"
-                      value={guildId}
-                      onChange={(e) => setGuildId(e.target.value)}
-                      className="w-full bg-bg-tertiary border border-border rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:border-white/50 transition-all text-text-primary"
-                    />
+                    <label className="text-[10px] font-bold text-text-secondary uppercase tracking-widest">Channel</label>
+                    <div className="relative">
+                      <select 
+                        value={channelId}
+                        onChange={(e) => setChannelId(e.target.value)}
+                        className="w-full bg-bg-tertiary border border-border rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:border-white/50 transition-all text-text-primary appearance-none"
+                      >
+                        <option value="">Select a channel...</option>
+                        {channels.map(c => (
+                          <option key={c.id} value={c.id}>#{c.name}</option>
+                        ))}
+                      </select>
+                      <div className="absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none text-text-secondary">
+                        {loadingChannels ? <Loader2 size={14} className="animate-spin" /> : <ChevronDown size={14} />}
+                      </div>
+                    </div>
                   </div>
                   <div className="space-y-2">
-                    <label className="text-[10px] font-bold text-text-secondary uppercase tracking-widest">Channel ID</label>
+                    <label className="text-[10px] font-bold text-text-secondary uppercase tracking-widest">Manual Channel ID (Override)</label>
                     <input 
                       type="text" 
                       placeholder="Enter Channel ID"

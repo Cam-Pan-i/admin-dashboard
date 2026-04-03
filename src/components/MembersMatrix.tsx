@@ -32,39 +32,24 @@ interface DiscordRole {
   color: number;
 }
 
+import { supabase, safeFetch } from '../lib/supabase';
+
 interface Member {
   id: string;
   username: string;
-  avatar: string | null;
-  joinDate: string;
-  premiumSince: string | null;
-  roles: DiscordRole[];
+  avatar_url: string | null;
+  joined_at: string;
+  account_created: string | null;
+  roles: string[];
   status: string;
-  nickname: string | null;
-  isBot: boolean;
-  // Mock data for fields not in Discord API
-  messages?: number;
-  modHistory?: number;
-  bio?: string;
-  location?: string;
-  lastSeen?: string;
+  is_bot: boolean;
+  messages_count?: number;
+  warn_count?: number;
+  ban_count?: number;
+  mute_count?: number;
+  last_seen?: string;
+  blacklisted?: boolean;
 }
-
-const RoleBadge: React.FC<{ role: DiscordRole }> = ({ role }) => {
-  const intToHex = (color: number) => {
-    if (color === 0) return '#99aab5';
-    return `#${color.toString(16).padStart(6, '0')}`;
-  };
-
-  return (
-    <span 
-      className="px-2 py-0.5 rounded-sm text-[9px] font-bold border uppercase tracking-tighter bg-white/5 font-mono"
-      style={{ color: intToHex(role.color), borderColor: `${intToHex(role.color)}44` }}
-    >
-      {role.name}
-    </span>
-  );
-};
 
 export const MembersMatrix = () => {
   const [search, setSearch] = useState('');
@@ -73,27 +58,25 @@ export const MembersMatrix = () => {
   const [members, setMembers] = useState<Member[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [stats, setStats] = useState({ active: 0, total: 0 });
 
   const fetchMembers = async () => {
     setLoading(true);
     setError(null);
     try {
-      const response = await fetch('/api/discord/members');
-      if (!response.ok) {
-        const data = await response.json();
-        throw new Error(data.error || 'Failed to fetch members');
-      }
-      const data = await response.json();
-      // Add some mock data for the fields not in Discord API
-      const enrichedData = data.map((m: any) => ({
-        ...m,
-        messages: Math.floor(Math.random() * 2000),
-        modHistory: Math.floor(Math.random() * 3),
-        bio: m.isBot ? 'I am a helpful bot.' : 'A valued member of the community.',
-        location: 'Global',
-        lastSeen: 'Online'
-      }));
-      setMembers(enrichedData);
+      const data = await safeFetch(
+        supabase.from('members').select('*').order('joined_at', { ascending: false }),
+        [],
+        'Fetch members'
+      );
+      setMembers(data);
+      
+      const serverStats = await safeFetch(
+        supabase.from('server_stats').select('online_members, total_members').order('updated_at', { ascending: false }).limit(1).single(),
+        { online_members: 0, total_members: 0 },
+        'Fetch server stats'
+      );
+      setStats({ active: serverStats.online_members, total: serverStats.total_members });
     } catch (err: any) {
       setError(err.message);
     } finally {
@@ -107,8 +90,7 @@ export const MembersMatrix = () => {
 
   const filteredMembers = members.filter(m => 
     m.username.toLowerCase().includes(search.toLowerCase()) || 
-    m.id.includes(search) ||
-    (m.nickname && m.nickname.toLowerCase().includes(search.toLowerCase()))
+    m.id.includes(search)
   );
 
   return (
@@ -146,7 +128,7 @@ export const MembersMatrix = () => {
                       <span className="text-[8px] font-bold uppercase tracking-wider text-white/80">View Profile</span>
                     </div>
                     <img 
-                      src={selectedMember.avatar || `https://api.dicebear.com/7.x/avataaars/svg?seed=${selectedMember.username}`} 
+                      src={selectedMember.avatar_url || `https://api.dicebear.com/7.x/avataaars/svg?seed=${selectedMember.username}`} 
                       alt={selectedMember.username} 
                       className="w-full h-full object-cover"
                       referrerPolicy="no-referrer"
@@ -155,9 +137,9 @@ export const MembersMatrix = () => {
                   <div className="flex-1 pb-1">
                     <div className="flex items-center gap-3 mb-1">
                       <h2 className="text-2xl font-bold tracking-tighter uppercase italic">
-                        {selectedMember.nickname || selectedMember.username.split('#')[0]}
+                        {selectedMember.username}
                       </h2>
-                      {selectedMember.isBot && (
+                      {selectedMember.is_bot && (
                         <span className="bg-blue-500/20 text-blue-400 text-[8px] font-bold px-1.5 py-0.5 rounded-sm uppercase border border-blue-500/30 font-mono">System Bot</span>
                       )}
                       <div className={cn(
@@ -178,7 +160,7 @@ export const MembersMatrix = () => {
                         Personnel Dossier
                       </h3>
                       <p className="text-xs leading-relaxed text-white/70 font-medium italic border-l-2 border-white/10 pl-4">
-                        {selectedMember.bio}
+                        {selectedMember.is_bot ? 'I am a helpful bot.' : 'A valued member of the community.'}
                       </p>
                     </div>
 
@@ -188,24 +170,22 @@ export const MembersMatrix = () => {
                         Clearance Levels
                       </h3>
                       <div className="flex flex-wrap gap-1.5">
-                        {selectedMember.roles.map(role => <RoleBadge key={role.id} role={role} />)}
+                        {selectedMember.roles.map(roleId => (
+                          <span key={roleId} className="px-2 py-0.5 rounded-sm text-[9px] font-bold border uppercase tracking-tighter bg-white/5 font-mono text-text-secondary border-white/10">
+                            {roleId}
+                          </span>
+                        ))}
                       </div>
                     </div>
 
                     <div className="space-y-2 pt-2">
                       <div className="flex items-center gap-3 text-text-secondary group">
                         <Calendar size={12} className="text-white/20 group-hover:text-white/40 transition-colors" />
-                        <span className="text-[10px] font-mono uppercase tracking-wider">Enlisted: <span className="text-white/80">{format(new Date(selectedMember.joinDate), 'yyyy.MM.dd')}</span></span>
+                        <span className="text-[10px] font-mono uppercase tracking-wider">Enlisted: <span className="text-white/80">{selectedMember.joined_at ? format(new Date(selectedMember.joined_at), 'yyyy.MM.dd') : '-'}</span></span>
                       </div>
-                      {selectedMember.premiumSince && (
-                        <div className="flex items-center gap-3 text-text-secondary group">
-                          <Zap size={12} className="text-yellow-400/40 group-hover:text-yellow-400/60 transition-colors" />
-                          <span className="text-[10px] font-mono uppercase tracking-wider">Booster: <span className="text-yellow-400/80">{format(new Date(selectedMember.premiumSince), 'yyyy.MM.dd')}</span></span>
-                        </div>
-                      )}
                       <div className="flex items-center gap-3 text-text-secondary group">
                         <Clock size={12} className="text-white/20 group-hover:text-white/40 transition-colors" />
-                        <span className="text-[10px] font-mono uppercase tracking-wider">Last Sync: <span className="text-white/80">{selectedMember.lastSeen}</span></span>
+                        <span className="text-[10px] font-mono uppercase tracking-wider">Last Sync: <span className="text-white/80">{selectedMember.last_seen ? format(new Date(selectedMember.last_seen), 'yyyy.MM.dd HH:mm') : '-'}</span></span>
                       </div>
                     </div>
                   </div>
@@ -219,14 +199,14 @@ export const MembersMatrix = () => {
                       <div className="grid grid-cols-2 gap-4">
                         <div className="space-y-1">
                           <p className="text-[8px] font-bold uppercase tracking-wider text-text-secondary">Comm Volume</p>
-                          <p className="text-xl font-bold font-mono tracking-tighter">{(selectedMember.messages || 0).toLocaleString()}</p>
+                          <p className="text-xl font-bold font-mono tracking-tighter">{(selectedMember.messages_count || 0).toLocaleString()}</p>
                         </div>
                         <div className="space-y-1">
                           <p className="text-[8px] font-bold uppercase tracking-wider text-text-secondary">Infractions</p>
                           <p className={cn(
                             "text-xl font-bold font-mono tracking-tighter",
-                            (selectedMember.modHistory || 0) > 0 ? "text-red-400" : "text-text-secondary"
-                          )}>{selectedMember.modHistory || 0}</p>
+                            (selectedMember.warn_count || 0) > 0 ? "text-red-400" : "text-text-secondary"
+                          )}>{selectedMember.warn_count || 0}</p>
                         </div>
                       </div>
                     </div>
@@ -291,7 +271,7 @@ export const MembersMatrix = () => {
           Filters
         </button>
         <div className="flex items-center justify-between px-4 py-2.5 rounded-lg glass border border-white/10 text-[10px] font-mono uppercase tracking-wider">
-          <span className="text-text-secondary">Active: <span className="text-white">8</span> / 12,482</span>
+          <span className="text-text-secondary">Active: <span className="text-white">{stats.active?.toLocaleString() || '-'}</span> / {stats.total?.toLocaleString() || '-'}</span>
         </div>
       </div>
 
@@ -330,11 +310,11 @@ export const MembersMatrix = () => {
                     <td className="px-6 py-4">
                       <div className="flex items-center gap-3">
                         <div className="w-9 h-9 rounded-lg bg-bg-tertiary border border-white/10 overflow-hidden relative">
-                          <img src={member.avatar || `https://api.dicebear.com/7.x/avataaars/svg?seed=${member.username}`} alt="" referrerPolicy="no-referrer" className="w-full h-full object-cover" />
+                          <img src={member.avatar_url || `https://api.dicebear.com/7.x/avataaars/svg?seed=${member.username}`} alt="" referrerPolicy="no-referrer" className="w-full h-full object-cover" />
                         </div>
                         <div>
                           <p className="text-xs font-bold group-hover:text-white transition-colors uppercase tracking-tight">
-                            {member.nickname || member.username.split('#')[0]}
+                            {member.username}
                           </p>
                           <p className="text-[8px] text-text-secondary font-mono uppercase tracking-wider opacity-60">ID: {member.id.substring(0, 8)}</p>
                         </div>
@@ -353,12 +333,16 @@ export const MembersMatrix = () => {
                     <td className="px-6 py-4">
                       <div className="flex items-center gap-2 text-text-secondary">
                         <Clock size={12} className="opacity-40" />
-                        <span className="text-[10px] font-mono">{format(new Date(member.joinDate), 'yyyy.MM.dd')}</span>
+                        <span className="text-[10px] font-mono">{member.joined_at ? format(new Date(member.joined_at), 'yyyy.MM.dd') : '-'}</span>
                       </div>
                     </td>
                     <td className="px-6 py-4">
                       <div className="flex flex-wrap gap-1">
-                        {member.roles.slice(0, 2).map(role => <RoleBadge key={role.id} role={role} />)}
+                        {member.roles.slice(0, 2).map(roleId => (
+                          <span key={roleId} className="px-2 py-0.5 rounded-sm text-[9px] font-bold border uppercase tracking-tighter bg-white/5 font-mono text-text-secondary border-white/10">
+                            {roleId}
+                          </span>
+                        ))}
                         {member.roles.length > 2 && (
                           <span className="text-[8px] text-text-secondary font-bold font-mono">+{member.roles.length - 2}</span>
                         )}
@@ -368,12 +352,12 @@ export const MembersMatrix = () => {
                       <div className="flex items-center gap-4">
                         <div className="flex items-center gap-1.5 text-text-secondary">
                           <MessageSquare size={12} className="opacity-40" />
-                          <span className="text-[10px] font-mono">{member.messages}</span>
+                          <span className="text-[10px] font-mono">{member.messages_count || 0}</span>
                         </div>
-                        {(member.modHistory || 0) > 0 && (
+                        {(member.warn_count || 0) > 0 && (
                           <div className="flex items-center gap-1.5 text-red-400/80">
                             <Shield size={12} />
-                            <span className="text-[10px] font-mono">{member.modHistory}</span>
+                            <span className="text-[10px] font-mono">{member.warn_count}</span>
                           </div>
                         )}
                       </div>

@@ -2,11 +2,11 @@ import React, { useState } from 'react';
 import { Bot, LogIn, Mail, Lock, Loader2, AlertTriangle } from 'lucide-react';
 import { supabase, isSupabaseConfigured } from '../lib/supabase';
 import { useAuthStore } from '../store/useAuthStore';
-import { getAccountByEmail } from '../lib/accounts';
+import { fetchAccountByEmail } from '../lib/accounts';
 import { User } from '@supabase/supabase-js';
 
 export const LoginPage = () => {
-  const { setUser, setRole } = useAuthStore();
+  const { setUser, setRoles } = useAuthStore();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [isLoading, setIsLoading] = useState(false);
@@ -17,18 +17,16 @@ export const LoginPage = () => {
     setIsLoading(true);
     setError(null);
 
-    const mockAccounts: Record<string, string> = {
-      'owner@example.com': 'owner',
-      'admin@example.com': 'admin',
-      'mod@example.com': 'mod'
-    };
-
     const normalizedEmail = email.toLowerCase().trim();
-    if (mockAccounts[normalizedEmail] && mockAccounts[normalizedEmail] === password) {
-      const account = getAccountByEmail(normalizedEmail);
+    
+    // Try to fetch account from Supabase first
+    const account = await fetchAccountByEmail(normalizedEmail);
+
+    if (!isSupabaseConfigured) {
+      // Fallback for simulation mode if email matches a known role
       if (account) {
         const mockUser: User = {
-          id: 'mock-id-' + account.role,
+          id: 'mock-id-' + account.roles[0],
           email: account.email,
           app_metadata: {},
           user_metadata: {},
@@ -37,13 +35,11 @@ export const LoginPage = () => {
         } as User;
         
         setUser(mockUser);
-        setRole(account.role as any);
+        setRoles(account.roles as any);
         setIsLoading(false);
         return;
       }
-    }
-
-    if (!isSupabaseConfigured) {
+      
       setError('INVALID CREDENTIALS. ACCESS DENIED.');
       setIsLoading(false);
       return;

@@ -20,7 +20,7 @@ import { Bot } from 'lucide-react';
 import { useAuthStore } from './store/useAuthStore';
 import { LoginPage } from './components/LoginPage';
 import { supabase, isSupabaseConfigured } from './lib/supabase';
-import { getAccountByEmail } from './lib/accounts';
+import { fetchAccountByEmail } from './lib/accounts';
 
 import { MainPage } from './components/public/MainPage';
 import { ShopPage } from './components/public/ShopPage';
@@ -30,7 +30,7 @@ const queryClient = new QueryClient();
 
 function DashboardApp() {
   const [activeTab, setActiveTab] = useState('dashboard');
-  const { user, setUser, setRole, isLoading, isHydrated, setHydrated } = useAuthStore();
+  const { user, setUser, setRoles, isLoading, isHydrated, setHydrated } = useAuthStore();
 
   useEffect(() => {
     const unsub = useAuthStore.persist.onFinishHydration(() => {
@@ -47,12 +47,12 @@ function DashboardApp() {
   useEffect(() => {
     if (!isHydrated) return;
 
-    const updateRole = (email: string | undefined) => {
-      const account = getAccountByEmail(email);
+    const updateRole = async (email: string | undefined) => {
+      const account = await fetchAccountByEmail(email);
       if (account) {
-        setRole(account.role as any);
+        setRoles(account.roles as any);
       } else {
-        setRole('mod');
+        setRoles(['mod']);
       }
     };
 
@@ -85,7 +85,7 @@ function DashboardApp() {
       // Simulation mode
       setUser(null);
     }
-  }, [isHydrated, setUser, setRole]);
+  }, [isHydrated, setUser, setRoles]);
 
   if (!isHydrated || isLoading) {
     return (

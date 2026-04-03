@@ -6,73 +6,85 @@
  * via code rather than just database entries, making it "Injection Bulletproof."
  */
 
+import { supabase, safeFetch } from './supabase';
+
 export type UserRole = 'owner' | 'admin' | 'mod' | 'user';
 
 export interface AccountDefinition {
   email: string;
-  role: UserRole;
+  roles: UserRole[];
   permissions: string[];
   isSystemAccount: boolean;
 }
 
 /**
- * SYSTEM ACCOUNTS CONFIGURATION
- * Add your authorized emails and their roles here.
+ * Helper to get the highest priority role for UI display
  */
-const ACCOUNTS_MAP = new Map<string, AccountDefinition>([
-  [
-    'owner@example.com', 
-    {
-      email: 'owner@example.com',
-      role: 'owner',
-      permissions: ['*'], // All permissions
-      isSystemAccount: true
-    }
-  ],
-  [
-    'admin@example.com', 
-    {
-      email: 'admin@example.com',
-      role: 'admin',
-      permissions: ['dashboard', 'moderation', 'config', 'embeds'],
-      isSystemAccount: true
-    }
-  ],
-  [
-    'mod@example.com', 
-    {
-      email: 'mod@example.com',
-      role: 'mod',
-      permissions: ['dashboard', 'moderation'],
-      isSystemAccount: true
-    }
-  ],
-]);
+export const getPrimaryRole = (roles: UserRole[]): UserRole => {
+  if (roles.includes('owner')) return 'owner';
+  if (roles.includes('admin')) return 'admin';
+  if (roles.includes('mod')) return 'mod';
+  return 'user';
+};
 
 /**
- * SECURE LOOKUP FUNCTION
- * This uses a Map lookup which is O(1) and immune to SQL/NoSQL injection
- * because it doesn't use dynamic query strings.
+ * SECURE LOOKUP FUNCTION (Async)
+ * Fetches account details from Supabase authorized_users table.
  */
-export const getAccountByEmail = (email: string | undefined | null): AccountDefinition | null => {
+export const fetchAccountByEmail = async (email: string | undefined | null): Promise<AccountDefinition | null> => {
   if (!email) return null;
   
-  // Normalize email to prevent bypasses via casing
   const normalizedEmail = email.toLowerCase().trim();
   
-  return ACCOUNTS_MAP.get(normalizedEmail) || null;
+  const data = await safeFetch(
+    supabase
+      .from('authorized_users')
+      .select('*')
+      .eq('email', normalizedEmail)
+      .single(),
+    null,
+    'Fetch account by email'
+  );
+
+  if (data) {
+    return {
+      email: data.email,
+      roles: (data.roles as UserRole[]) || ['mod'],
+      permissions: data.permissions || ['dashboard'],
+      isSystemAccount: true
+    };
+  }
+
+  return null;
 };
 
 /**
  * PERMISSION CHECKER
- * Bulletproof check for specific actions
  */
-export const hasPermission = (email: string, permission: string): boolean => {
-  const account = getAccountByEmail(email);
+export const hasPermission = (account: AccountDefinition | null, permission: string): boolean => {
   if (!account) return false;
   
   if (account.permissions.includes('*')) return true;
   return account.permissions.includes(permission);
 };
 
-export const getAllSystemAccounts = () => Array.from(ACCOUNTS_MAP.values());
+/**
+ * Fetches all system accounts from Supabase.
+ */
+export const fetchAllSystemAccounts = async (): Promise<AccountDefinition[]> => {
+  const data = await safeFetch(
+    supabase
+      .from('authorized_users')
+      .select('*')
+      .order('created_at', { ascending: false }),
+    [],
+    'Fetch all system accounts'
+  );
+
+  return data.map((acc: any) => ({
+    email: acc.email,
+    roles: (acc.roles as UserRole[]) || ['mod'],
+    permissions: acc.permissions || ['dashboard'],
+    isSystemAccount: true
+  }));
+};

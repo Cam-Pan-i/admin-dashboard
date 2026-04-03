@@ -2,6 +2,7 @@ import React, { useState, useRef, useEffect } from 'react';
 import { Bot, Send, Sparkles, User, Loader2 } from 'lucide-react';
 import { generateResponse } from '../services/geminiService';
 import { useAuthStore } from '../store/useAuthStore';
+import { getPrimaryRole } from '../lib/accounts';
 import { motion, AnimatePresence } from 'framer-motion';
 import { cn } from '../lib/utils';
 
@@ -10,19 +11,34 @@ interface Message {
   content: string;
 }
 
+import { supabase, safeFetch } from '../lib/supabase';
+
 export const GeminiAssistant = () => {
-  const { role } = useAuthStore();
+  const { roles } = useAuthStore();
   const [messages, setMessages] = useState<Message[]>([
     { role: 'assistant', content: "Hello! I'm Bob's AI Assistant. How can I help you manage your server today?" }
   ]);
   const [input, setInput] = useState('');
   const [isLoading, setIsLoading] = useState(false);
+  const [serverContext, setServerContext] = useState<string>('');
   const scrollRef = useRef<HTMLDivElement>(null);
 
+  useEffect(() => {
+    const fetchContext = async () => {
+      const stats = await safeFetch(supabase.from('server_stats').select('*').single(), null, 'Fetch server context');
+      if (stats) {
+        setServerContext(`Current Server Stats: ${stats.total_members} total members, ${stats.online_members} online. Total messages: ${stats.total_messages}. Total tickets: ${stats.total_tickets}.`);
+      }
+    };
+    fetchContext();
+  }, []);
+
   const getSystemInstruction = () => {
-    const base = "You are Bob, an elite Discord bot management AI assistant. You help server owners and moderators manage their communities, configure bot settings, and analyze server metrics. Be professional, concise, and helpful. Use a slightly futuristic, tech-focused tone.";
+    const base = `You are Bob, an elite Discord bot management AI assistant. You help server owners and moderators manage their communities, configure bot settings, and analyze server metrics. Be professional, concise, and helpful. Use a slightly futuristic, tech-focused tone. ${serverContext}`;
     
-    switch (role) {
+    const primaryRole = roles ? getPrimaryRole(roles) : 'user';
+    
+    switch (primaryRole) {
       case 'owner':
         return `${base} You are currently speaking with the server OWNER. Focus on high-level strategy, monetization, growth, and full system control. You have maximum authority.`;
       case 'admin':

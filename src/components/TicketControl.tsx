@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { 
   Plus, 
   Clock, 
@@ -9,17 +9,13 @@ import {
   ChevronRight,
   BarChart2,
   CheckCircle2,
-  AlertCircle
+  AlertCircle,
+  RefreshCw,
+  Loader2
 } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { cn } from '../lib/utils';
-
-const tickets = [
-  { id: 'T-1042', title: 'Payment issue with BTC', user: 'Kaka#0001', status: 'open', priority: 'high', time: '12m ago', staff: null },
-  { id: 'T-1043', title: 'Cannot verify account', user: 'User#1234', status: 'in-progress', priority: 'normal', time: '45m ago', staff: 'ModBot' },
-  { id: 'T-1044', title: 'Bulk order inquiry', user: 'Trader#9999', status: 'awaiting-user', priority: 'low', time: '2h ago', staff: 'AdminBob' },
-  { id: 'T-1045', title: 'Refund request #829', user: 'Buyer#5678', status: 'open', priority: 'high', time: '3h ago', staff: null },
-];
+import { supabase, safeFetch } from '../lib/supabase';
 
 const PriorityBadge = ({ priority }: { priority: string }) => {
   const colors: Record<string, string> = {
@@ -40,6 +36,35 @@ const PriorityBadge = ({ priority }: { priority: string }) => {
 
 export const TicketControl = () => {
   const [view, setView] = useState<'kanban' | 'list' | 'analytics'>('kanban');
+  const [tickets, setTickets] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  const fetchTickets = async () => {
+    setLoading(true);
+    const data = await safeFetch(
+      supabase.from('tickets').select('*').order('created_at', { ascending: false }),
+      [],
+      'Fetch tickets'
+    );
+    
+    // Map Supabase tickets to UI format
+    const formattedTickets = data.map((t: any) => ({
+      id: `T-${t.id.toString().slice(-4)}`,
+      title: t.reason || t.description || 'No subject',
+      user: t.creator_name || 'Unknown',
+      status: t.closed_at ? 'resolved' : (t.claimed_by ? 'in-progress' : 'open'),
+      priority: t.priority || 'normal',
+      time: t.created_at ? new Date(t.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : '-',
+      staff: t.claimed_by
+    }));
+    
+    setTickets(formattedTickets);
+    setLoading(false);
+  };
+
+  useEffect(() => {
+    fetchTickets();
+  }, []);
 
   return (
     <div className="space-y-6 animate-in fade-in duration-500">
@@ -83,16 +108,20 @@ export const TicketControl = () => {
                 <column.icon size={16} className={column.color} />
                 <h3 className="font-bold text-sm">{column.label}</h3>
                 <span className="text-[10px] bg-bg-tertiary px-1.5 py-0.5 rounded border border-border text-text-secondary">
-                  {tickets.filter(t => t.status === column.id).length}
+                  {loading ? '...' : tickets.filter(t => t.status === column.id).length}
                 </span>
               </div>
-              <button className="text-text-secondary hover:text-text-primary">
-                <Plus size={16} />
+              <button onClick={fetchTickets} className="text-text-secondary hover:text-text-primary">
+                <RefreshCw size={14} className={cn(loading && "animate-spin")} />
               </button>
             </div>
 
             <div className="space-y-3 min-h-[500px] p-2 rounded-2xl bg-white/[0.02] border border-dashed border-border/50">
-              {tickets.filter(t => t.status === column.id).map((ticket) => (
+              {loading && tickets.length === 0 ? (
+                <div className="h-full flex items-center justify-center">
+                  <Loader2 size={24} className="animate-spin text-white/10" />
+                </div>
+              ) : tickets.filter(t => t.status === column.id).map((ticket) => (
                 <motion.div 
                   key={ticket.id}
                   layoutId={ticket.id}

@@ -1,9 +1,19 @@
-import React from 'react';
-import { Shield, Mail, Lock, UserCheck, AlertTriangle } from 'lucide-react';
-import { getAllSystemAccounts } from '../lib/accounts';
+import React, { useState, useEffect } from 'react';
+import { Shield, Mail, Lock, UserCheck, AlertTriangle, Loader2 } from 'lucide-react';
+import { fetchAllSystemAccounts, AccountDefinition } from '../lib/accounts';
 
 export const AccountControl: React.FC = () => {
-  const accounts = getAllSystemAccounts();
+  const [accounts, setAccounts] = useState<AccountDefinition[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const loadAccounts = async () => {
+      const data = await fetchAllSystemAccounts();
+      setAccounts(data);
+      setLoading(false);
+    };
+    loadAccounts();
+  }, []);
 
   return (
     <div className="space-y-8 animate-in fade-in duration-700">
@@ -31,7 +41,13 @@ export const AccountControl: React.FC = () => {
           </div>
 
           <div className="overflow-x-auto custom-scrollbar relative">
-            <table className="w-full text-left border-collapse">
+            {loading ? (
+              <div className="py-20 flex flex-col items-center justify-center gap-4">
+                <Loader2 size={32} className="animate-spin text-white/20" />
+                <p className="text-[10px] font-bold uppercase tracking-widest text-text-secondary">Syncing Registry...</p>
+              </div>
+            ) : (
+              <table className="w-full text-left border-collapse">
               <thead>
                 <tr className="border-b border-white/10">
                   <th className="py-5 px-4 text-[9px] font-bold text-text-secondary uppercase tracking-[0.2em]">Email Address</th>
@@ -52,13 +68,17 @@ export const AccountControl: React.FC = () => {
                       </div>
                     </td>
                     <td className="py-5 px-4">
-                      <span className={`px-2 py-1 rounded text-[9px] font-bold uppercase tracking-[0.2em] border ${
-                        acc.role === 'owner' ? 'bg-purple-500/10 text-purple-400 border-purple-500/20' :
-                        acc.role === 'admin' ? 'bg-blue-500/10 text-blue-400 border-blue-500/20' :
-                        'bg-green-500/10 text-green-400 border-green-500/20'
-                      }`}>
-                        {acc.role}
-                      </span>
+                      <div className="flex flex-wrap gap-2">
+                        {acc.roles.map((role) => (
+                          <span key={role} className={`px-2 py-1 rounded text-[9px] font-bold uppercase tracking-[0.2em] border ${
+                            role === 'owner' ? 'bg-purple-500/10 text-purple-400 border-purple-500/20' :
+                            role === 'admin' ? 'bg-blue-500/10 text-blue-400 border-blue-500/20' :
+                            'bg-green-500/10 text-green-400 border-green-500/20'
+                          }`}>
+                            {role}
+                          </span>
+                        ))}
+                      </div>
                     </td>
                     <td className="py-5 px-4">
                       <div className="flex flex-wrap gap-1.5">
@@ -79,6 +99,7 @@ export const AccountControl: React.FC = () => {
                 ))}
               </tbody>
             </table>
+            )}
           </div>
         </div>
 

@@ -76,12 +76,18 @@ interface AuditLog {
   time: string;
 }
 
+import { supabase, safeFetch } from '../lib/supabase';
+
 export const Dashboard = () => {
   const [guildInfo, setGuildInfo] = useState<any>(null);
   const [settings, setSettings] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [logs, setLogs] = useState<AuditLog[]>([]);
   const [loadingLogs, setLoadingLogs] = useState(true);
+  const [stats, setStats] = useState<any[]>([]);
+  const [topCommands, setTopCommands] = useState<any[]>([]);
+  const [health, setHealth] = useState({ latency: '-', uptime: '-', ram: '-' });
+  const [counts, setCounts] = useState({ tickets: '-', verification: '-', modActions: '-' });
 
   const fetchGuild = async () => {
     try {
@@ -89,6 +95,16 @@ export const Dashboard = () => {
       if (response.ok) {
         const data = await response.json();
         setGuildInfo(data);
+      }
+      
+      // Also fetch from server_stats for more details
+      const serverStats = await safeFetch(
+        supabase.from('server_stats').select('*').order('updated_at', { ascending: false }).limit(1).single(),
+        null,
+        'Fetch server_stats'
+      );
+      if (serverStats) {
+        setGuildInfo((prev: any) => ({ ...prev, ...serverStats }));
       }
     } catch (error) {
       console.error("Failed to fetch guild info:", error);
@@ -112,11 +128,21 @@ export const Dashboard = () => {
   const fetchLogs = async () => {
     setLoadingLogs(true);
     try {
-      const response = await fetch('/api/discord/audit-logs');
-      if (response.ok) {
-        const data = await response.json();
-        setLogs(data.slice(0, 5));
-      }
+      const auditLogs = await safeFetch(
+        supabase.from('audit_log').select('*').order('timestamp', { ascending: false }).limit(5),
+        [],
+        'Fetch audit logs'
+      );
+      
+      const formattedLogs = auditLogs.map((log: any) => ({
+        id: log.id.toString(),
+        mod: log.user_name || 'System',
+        user: log.details?.split(' ')[0] || 'Unknown',
+        action: log.action || 'Action',
+        reason: log.details || 'No reason provided',
+        time: log.timestamp ? new Date(log.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : '-'
+      }));
+      setLogs(formattedLogs);
     } catch (error) {
       console.error("Failed to fetch audit logs:", error);
     } finally {
@@ -124,10 +150,73 @@ export const Dashboard = () => {
     }
   };
 
+  const fetchDashboardData = async () => {
+    // Fetch counts
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+
+    const [ticketsCount, verificationCount, modActionsCount] = await Promise.all([
+      supabase.from('tickets').select('*', { count: 'exact', head: true }).eq('status', 'open'),
+      supabase.from('verification_logs').select('*', { count: 'exact', head: true }).eq('status', 'pending'),
+      supabase.from('audit_log').select('*', { count: 'exact', head: true }).gte('timestamp', today.toISOString())
+    ]);
+
+    setCounts({
+      tickets: ticketsCount.count?.toString() || '0',
+      verification: verificationCount.count?.toString() || '0',
+      modActions: modActionsCount.count?.toString() || '0'
+    });
+
+    // Fetch stats for chart
+    const memberStats = await safeFetch(
+      supabase.from('member_stats').select('*').order('timestamp', { ascending: false }).limit(7),
+      [],
+      'Fetch member stats'
+    );
+    
+    const chartData = memberStats.reverse().map((s: any) => ({
+      name: new Date(s.timestamp).toLocaleDateString([], { weekday: 'short' }),
+      members: s.total_members || 0,
+      online: s.online_members || 0
+    }));
+    setStats(chartData.length > 0 ? chartData : data);
+
+    // Fetch top commands
+    const cmdLogs = await safeFetch(
+      supabase.from('command_logs').select('commands'),
+      [],
+      'Fetch command logs'
+    );
+    
+    const cmdCounts = cmdLogs.reduce((acc: any, log: any) => {
+      acc[log.commands] = (acc[log.commands] || 0) + 1;
+      return acc;
+    }, {});
+    
+    const topCmds = Object.entries(cmdCounts)
+      .map(([name, value]) => ({ name, value }))
+      .sort((a: any, b: any) => b.value - a.value)
+      .slice(0, 5);
+    
+    setTopCommands(topCmds.length > 0 ? topCmds : commandData);
+
+    // Fetch health
+    const heartbeat = await safeFetch(
+      supabase.from('pulse_heartbeat').select('*').order('created_at', { ascending: false }).limit(1).single(),
+      null,
+      'Fetch heartbeat'
+    );
+    
+    if (heartbeat) {
+      setHealth(h => ({ ...h, latency: `${heartbeat.latency_ms}ms` }));
+    }
+  };
+
   useEffect(() => {
     fetchGuild();
     fetchLogs();
     fetchSettings();
+    fetchDashboardData();
   }, []);
 
   return (
@@ -160,13 +249,13 @@ export const Dashboard = () => {
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
         <StatCard 
           title="Total Members" 
-          value={loading ? "..." : (guildInfo?.memberCount?.toLocaleString() || "12,482")} 
+          value={loading ? "..." : (guildInfo?.total_members?.toLocaleString() || guildInfo?.memberCount?.toLocaleString() || "-")} 
           trend={12.5} 
           icon={Users} 
         />
-        <StatCard title="Active Tickets" value="24" trend={-4.2} icon={Ticket} />
-        <StatCard title="Verification Queue" value="156" trend={28.1} icon={ShieldCheck} />
-        <StatCard title="Mod Actions Today" value="42" trend={8.4} icon={Shield} />
+        <StatCard title="Active Tickets" value={counts.tickets} trend={-4.2} icon={Ticket} />
+        <StatCard title="Verification Queue" value={counts.verification} trend={28.1} icon={ShieldCheck} />
+        <StatCard title="Mod Actions Today" value={counts.modActions} trend={8.4} icon={Shield} />
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
@@ -183,7 +272,7 @@ export const Dashboard = () => {
           </div>
           <div className="h-[300px] w-full">
             <ResponsiveContainer width="100%" height="100%">
-              <AreaChart data={data}>
+              <AreaChart data={stats}>
                 <defs>
                   <linearGradient id="colorMembers" x1="0" y1="0" x2="0" y2="1">
                     <stop offset="5%" stopColor="#ffffff" stopOpacity={0.1}/>
@@ -255,7 +344,7 @@ export const Dashboard = () => {
           <h3 className="text-lg font-bold mb-6">Top Commands</h3>
           <div className="h-[250px] w-full">
             <ResponsiveContainer width="100%" height="100%">
-              <BarChart data={commandData} layout="vertical">
+              <BarChart data={topCommands} layout="vertical">
                 <XAxis type="number" hide />
                 <YAxis 
                   dataKey="name" 
@@ -286,15 +375,15 @@ export const Dashboard = () => {
           <div className="grid grid-cols-3 gap-8 w-full pt-4">
             <div>
               <p className="text-text-secondary text-[10px] uppercase font-bold tracking-wider">Latency</p>
-              <p className="text-lg font-bold text-white">24ms</p>
+              <p className="text-lg font-bold text-white">{health.latency}</p>
             </div>
             <div>
               <p className="text-text-secondary text-[10px] uppercase font-bold tracking-wider">Uptime</p>
-              <p className="text-lg font-bold text-white">99.9%</p>
+              <p className="text-lg font-bold text-white">{health.uptime}</p>
             </div>
             <div>
               <p className="text-text-secondary text-[10px] uppercase font-bold tracking-wider">RAM</p>
-              <p className="text-lg font-bold text-white">1.2GB</p>
+              <p className="text-lg font-bold text-white">{health.ram}</p>
             </div>
           </div>
         </div>

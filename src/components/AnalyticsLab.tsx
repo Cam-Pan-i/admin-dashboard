@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import { 
   BarChart3, 
   PieChart as PieChartIcon, 
@@ -25,35 +25,76 @@ import {
 } from 'recharts';
 import { motion } from 'framer-motion';
 import { cn } from '../lib/utils';
-
-const memberGrowth = [
-  { date: '2024-03-01', count: 10200 },
-  { date: '2024-03-05', count: 10500 },
-  { date: '2024-03-10', count: 10800 },
-  { date: '2024-03-15', count: 11200 },
-  { date: '2024-03-20', count: 11800 },
-  { date: '2024-03-25', count: 12100 },
-  { date: '2024-03-31', count: 12482 },
-];
-
-const modActions = [
-  { name: 'Bans', value: 420, color: '#ffffff' },
-  { name: 'Warns', value: 850, color: '#ffffff99' },
-  { name: 'Mutes', value: 320, color: '#ffffff66' },
-  { name: 'Kicks', value: 150, color: '#ffffff33' },
-];
-
-const activityHeatmap = [
-  { hour: '00:00', value: 45 },
-  { hour: '04:00', value: 20 },
-  { hour: '08:00', value: 65 },
-  { hour: '12:00', value: 95 },
-  { hour: '16:00', value: 120 },
-  { hour: '20:00', value: 85 },
-  { hour: '23:59', value: 55 },
-];
+import { supabase, safeFetch } from '../lib/supabase';
 
 export const AnalyticsLab = () => {
+  const [memberGrowth, setMemberGrowth] = useState<any[]>([]);
+  const [modActions, setModActions] = useState<any[]>([]);
+  const [activityPulse, setActivityPulse] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [stats, setStats] = useState({ totalEvents: 0, retention: '82%', virality: '1.4x', growthPercent: '+0%' });
+
+  useEffect(() => {
+    const fetchAnalytics = async () => {
+      setLoading(true);
+      try {
+        const [growthData, auditData, heartbeatData] = await Promise.all([
+          safeFetch(supabase.from('member_stats').select('date, count').order('date', { ascending: true }).limit(30), [], 'Fetch member growth'),
+          safeFetch(supabase.from('audit_log').select('action'), [], 'Fetch audit logs for distribution'),
+          safeFetch(supabase.from('pulse_heartbeat').select('timestamp, latency').order('timestamp', { ascending: true }).limit(24), [], 'Fetch activity pulse')
+        ]);
+
+        // Process growth data
+        setMemberGrowth(growthData);
+        if (growthData.length >= 2) {
+          const first = growthData[0].count;
+          const last = growthData[growthData.length - 1].count;
+          const diff = ((last - first) / first * 100).toFixed(1);
+          setStats(prev => ({ ...prev, growthPercent: `+${diff}%` }));
+        }
+
+        // Process mod actions
+        const actions = auditData.reduce((acc: any, curr: any) => {
+          const action = curr.action.toLowerCase();
+          if (action.includes('ban')) acc.bans++;
+          else if (action.includes('warn')) acc.warns++;
+          else if (action.includes('mute')) acc.mutes++;
+          else if (action.includes('kick')) acc.kicks++;
+          return acc;
+        }, { bans: 0, warns: 0, mutes: 0, kicks: 0 });
+
+        setModActions([
+          { name: 'Bans', value: actions.bans, color: '#ffffff' },
+          { name: 'Warns', value: actions.warns, color: '#ffffff99' },
+          { name: 'Mutes', value: actions.mutes, color: '#ffffff66' },
+          { name: 'Kicks', value: actions.kicks, color: '#ffffff33' },
+        ]);
+        setStats(prev => ({ ...prev, totalEvents: auditData.length }));
+
+        // Process activity pulse (using latency as a proxy for activity/load)
+        setActivityPulse(heartbeatData.map((h: any) => ({
+          hour: new Date(h.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+          value: h.latency
+        })));
+
+      } catch (err) {
+        console.error('Error fetching analytics:', err);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchAnalytics();
+  }, []);
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center h-[60vh]">
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-white"></div>
+      </div>
+    );
+  }
+
   return (
     <div className="space-y-8 animate-in fade-in duration-500">
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
@@ -85,7 +126,7 @@ export const AnalyticsLab = () => {
             </div>
             <div className="flex items-center gap-2 text-white text-[9px] font-bold uppercase tracking-[0.2em] font-mono">
               <TrendingUp size={14} className="text-green-400" />
-              <span className="text-green-400">+22.4%</span>
+              <span className="text-green-400">{stats.growthPercent}</span>
             </div>
           </div>
           <div className="h-[350px] w-full relative">
@@ -151,7 +192,7 @@ export const AnalyticsLab = () => {
               </PieChart>
             </ResponsiveContainer>
             <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none">
-              <span className="text-3xl font-bold font-mono tracking-tighter">1,742</span>
+              <span className="text-3xl font-bold font-mono tracking-tighter">{stats.totalEvents}</span>
               <span className="text-[8px] text-text-secondary uppercase tracking-[0.2em] font-bold opacity-60">Total Events</span>
             </div>
           </div>
@@ -180,7 +221,7 @@ export const AnalyticsLab = () => {
           </div>
           <div className="h-[250px] w-full relative">
             <ResponsiveContainer width="100%" height="100%">
-              <LineChart data={activityHeatmap}>
+              <LineChart data={activityPulse}>
                 <CartesianGrid strokeDasharray="3 3" stroke="#ffffff05" vertical={false} />
                 <XAxis 
                   dataKey="hour" 
@@ -196,7 +237,7 @@ export const AnalyticsLab = () => {
               </LineChart>
             </ResponsiveContainer>
           </div>
-          <p className="text-center text-[8px] text-text-secondary mt-4 uppercase tracking-[0.3em] font-bold opacity-60 italic relative">Peak activity detected at 16:00 UTC</p>
+          <p className="text-center text-[8px] text-text-secondary mt-4 uppercase tracking-[0.3em] font-bold opacity-60 italic relative">Real-time latency monitoring matrix</p>
         </div>
 
         <div className="glass p-8 rounded-xl border border-white/10 flex flex-col justify-center items-center text-center space-y-6 neo-border relative overflow-hidden">
@@ -212,11 +253,11 @@ export const AnalyticsLab = () => {
           <div className="flex gap-4 relative">
             <div className="px-8 py-4 rounded-lg bg-white/[0.02] border border-white/5">
               <p className="text-[8px] text-text-secondary font-bold uppercase tracking-[0.2em] mb-1">Retention</p>
-              <p className="text-2xl font-bold text-white font-mono tracking-tighter">82%</p>
+              <p className="text-2xl font-bold text-white font-mono tracking-tighter">{stats.retention}</p>
             </div>
             <div className="px-8 py-4 rounded-lg bg-white/[0.02] border border-white/5">
               <p className="text-[8px] text-text-secondary font-bold uppercase tracking-[0.2em] mb-1">Virality</p>
-              <p className="text-2xl font-bold text-white/70 font-mono tracking-tighter">1.4x</p>
+              <p className="text-2xl font-bold text-white/70 font-mono tracking-tighter">{stats.virality}</p>
             </div>
           </div>
         </div>

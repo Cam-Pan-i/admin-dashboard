@@ -1,29 +1,24 @@
 import React, { useEffect, useState } from 'react';
-import { ShoppingCart, Zap, X, AlertTriangle, ShoppingBag, Lock } from 'lucide-react';
-import { supabase } from '../../lib/supabase';
+import { ShoppingCart, Zap, X, AlertTriangle, ShoppingBag, Lock, ShoppingCart as ShoppingCartIcon, Zap as ZapIcon } from 'lucide-react';
+import { supabase, safeFetch } from '../../lib/supabase';
 import '../../public.css';
 
 const NOWPAYMENTS_API_KEY = process.env.NOWPAYMENTS_API_KEY || 'YOUR_API_KEY';
 const GUILD_ID = process.env.MAIN_GUILD || '1466511568614330484';
 
 interface Product {
+  id: string;
   name: string;
   price: number;
   description: string;
-  icon: string;
+  image_url: string;
   category: string;
+  stock?: number;
 }
 
-const products: Product[] = [
-  { name: 'Roblox', price: 1.50, description: 'High-activity Roblox accounts with verified emails and clean status.', icon: 'https://upload.wikimedia.org/wikipedia/commons/3/3a/Roblox_player_icon_black.svg', category: 'roblox' },
-  { name: 'Minecraft', price: 5.00, description: 'Full-access Java/Bedrock accounts with changeable credentials.', icon: 'https://i.ibb.co/27bBPy5P/mc2.png', category: 'minecraft' },
-  { name: 'Netflix Premium', price: 3.00, description: '4K Ultra HD accounts. Choose between private or shared profiles.', icon: 'https://upload.wikimedia.org/wikipedia/commons/0/08/Netflix_2015_logo.svg', category: 'netflix' },
-  { name: 'Steam Global', price: 2.00, description: 'Region-free Steam accounts with random library contents.', icon: 'https://upload.wikimedia.org/wikipedia/commons/8/83/Steam_icon_logo.svg', category: 'steam' },
-  { name: 'Xbox Ultimate', price: 2.50, description: 'Game Pass Ultimate subscriptions valid for Console and PC.', icon: 'https://upload.wikimedia.org/wikipedia/commons/f/f9/Xbox_one_logo.svg', category: 'xbox' },
-  { name: 'Bulk Email', price: 0.50, description: 'Aged Gmail/Outlook accounts with IMAP and POP3 functionality.', icon: 'https://raw.githubusercontent.com/simple-icons/simple-icons/develop/icons/maildotru.svg', category: 'email' },
-];
-
 export const ShopPage: React.FC = () => {
+  const [products, setProducts] = useState<Product[]>([]);
+  const [loadingProducts, setLoadingProducts] = useState(true);
   const [stock, setStock] = useState<Record<string, number>>({});
   const [geo, setGeo] = useState<any>(null);
   const [showCheckout, setShowCheckout] = useState(false);
@@ -43,6 +38,13 @@ export const ShopPage: React.FC = () => {
       }
     };
 
+    const fetchProducts = async () => {
+      setLoadingProducts(true);
+      const data = await safeFetch(supabase.from('products').select('*').order('created_at', { ascending: false }), [], 'Fetch products');
+      setProducts(data);
+      setLoadingProducts(false);
+    };
+
     const updateStock = async () => {
       try {
         const { data, error } = await supabase.from('stock_items').select('category');
@@ -60,6 +62,7 @@ export const ShopPage: React.FC = () => {
     };
 
     loadGeo();
+    fetchProducts();
     updateStock();
     const interval = setInterval(updateStock, 60000);
     return () => clearInterval(interval);
@@ -76,6 +79,13 @@ export const ShopPage: React.FC = () => {
   const closeCheckout = () => {
     setShowCheckout(false);
     setCurrentItem(null);
+  };
+
+  const copyAddr = () => {
+    if (invoice?.pay_address) {
+      navigator.clipboard.writeText(invoice.pay_address);
+      alert('Address copied to clipboard!');
+    }
   };
 
   const createInvoice = async () => {
@@ -173,16 +183,32 @@ export const ShopPage: React.FC = () => {
           </div>
 
           <div className="product-grid">
-            {products.map((p) => (
-              <div key={p.name} className="card product-card">
+            {loadingProducts ? (
+              Array.from({ length: 6 }).map((_, i) => (
+                <div key={i} className="card product-card animate-pulse">
+                  <div className="product-icon-wrapper" style={{ background: 'var(--bg-elevated)' }} />
+                  <div className="product-name" style={{ height: '20px', background: 'var(--bg-elevated)', borderRadius: '4px', width: '60%', margin: '12px auto' }} />
+                  <div className="product-price" style={{ height: '24px', background: 'var(--bg-elevated)', borderRadius: '4px', width: '40%', margin: '0 auto 12px' }} />
+                  <div className="product-desc" style={{ height: '40px', background: 'var(--bg-elevated)', borderRadius: '4px', width: '90%', margin: '0 auto 12px' }} />
+                  <div style={{ height: '36px', background: 'var(--bg-elevated)', borderRadius: '8px', width: '100%' }} />
+                </div>
+              ))
+            ) : products.map((p) => (
+              <div key={p.id} className="card product-card">
                 <div className="product-icon-wrapper">
-                  <img src={p.icon} className="product-img" style={p.name === 'Roblox' || p.name === 'Bulk Email' ? { filter: 'invert(1)' } : {}} alt={p.name} />
+                  <img 
+                    src={p.image_url || 'https://upload.wikimedia.org/wikipedia/commons/3/3a/Roblox_player_icon_black.svg'} 
+                    className="product-img" 
+                    style={{ filter: 'invert(1)' }} 
+                    alt={p.name} 
+                    referrerPolicy="no-referrer"
+                  />
                 </div>
                 <div className="product-name">{p.name}</div>
                 <div className="product-price">{formatPrice(p.price)}</div>
                 <p className="product-desc">{p.description}</p>
-                <div className={`badge ${stock[p.category] > 0 ? 'badge-open' : 'badge-closed'} mb-4`}>
-                  {stock[p.category] > 0 ? `${stock[p.category]} IN STOCK` : 'OUT OF STOCK'}
+                <div className={`badge ${stock[p.category.toLowerCase()] > 0 ? 'badge-open' : 'badge-closed'} mb-4`}>
+                  {stock[p.category.toLowerCase()] > 0 ? `${stock[p.category.toLowerCase()]} IN STOCK` : 'OUT OF STOCK'}
                 </div>
                 <button className="btn btn-primary w-full" onClick={() => openCheckout(p)}>
                   <Zap size={14} style={{ marginRight: '6px' }} /> Instant Buy

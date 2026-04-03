@@ -14,3 +14,24 @@ if (!supabaseUrl || !supabaseAnonKey || supabaseUrl === 'undefined') {
 export const isSupabaseConfigured = !!(supabaseUrl && supabaseAnonKey && supabaseUrl !== 'undefined' && supabaseAnonKey !== 'undefined');
 
 export const supabase = createClient(finalUrl, finalKey);
+
+/**
+ * Safe fetch wrapper for Supabase queries with error handling and default values.
+ */
+export async function safeFetch<T>(
+  query: any,
+  defaultValue: T,
+  errorMessage: string = 'Supabase fetch error'
+): Promise<T> {
+  try {
+    const { data, error } = await query;
+    if (error) {
+      console.error(`${errorMessage}:`, error);
+      return defaultValue;
+    }
+    return (data as T) || defaultValue;
+  } catch (err) {
+    console.error(`${errorMessage} (exception):`, err);
+    return defaultValue;
+  }
+}
