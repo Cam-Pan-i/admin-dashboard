@@ -42,8 +42,8 @@ export const useAuthStore = create<AuthState>()(
       isLoading: true,
       isHydrated: false,
       setUser: (user) => set({ user, isLoading: false }),
-      setRoles: (roles) => set({ roles }),
-      setHydrated: (isHydrated) => set({ isHydrated }),
+      setRoles: (roles) => set({ roles, isLoading: false }),
+      setHydrated: (isHydrated) => set({ isHydrated, isLoading: !isHydrated }),
       signOut: async () => {
         if (isSupabaseConfigured) {
           await supabase.auth.signOut();
