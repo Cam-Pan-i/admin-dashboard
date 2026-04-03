@@ -15,6 +15,8 @@ export interface AccountDefinition {
   roles: UserRole[];
   permissions: string[];
   isSystemAccount: boolean;
+  username?: string;
+  userid?: string;
 }
 
 /**
@@ -25,6 +27,57 @@ export const getPrimaryRole = (roles: UserRole[]): UserRole => {
   if (roles.includes('admin')) return 'admin';
   if (roles.includes('mod')) return 'mod';
   return 'user';
+};
+
+/**
+ * AUTHENTICATE DASHBOARD ACCOUNT
+ * Tries dashboard_accounts table first, then falls back to dummy logins.
+ */
+export const authenticateDashboardAccount = async (email: string, password: string): Promise<AccountDefinition | null> => {
+  const normalizedEmail = email.toLowerCase().trim();
+  
+  // 1. Try Supabase table dashboard_accounts
+  try {
+    const { data, error } = await supabase
+      .from('dashboard_accounts')
+      .select('*')
+      .eq('email', normalizedEmail)
+      .eq('password', password)
+      .single();
+      
+    if (data && !error) {
+      return {
+        email: data.email,
+        roles: data.perms ? [data.perms as UserRole] : ['mod'],
+        permissions: ['*'],
+        isSystemAccount: true,
+        username: data.username,
+        userid: data.userid
+      };
+    }
+  } catch (err) {
+    // Table might not exist or other error
+  }
+
+  // 2. Fallback to dummy logins
+  const dummyLogins: Record<string, { pass: string, role: UserRole }> = {
+    'owner@example.com': { pass: 'owner', role: 'owner' },
+    'admin@example.com': { pass: 'admin', role: 'admin' },
+    'mod@example.com': { pass: 'mod', role: 'mod' }
+  };
+
+  if (dummyLogins[normalizedEmail] && dummyLogins[normalizedEmail].pass === password) {
+    return {
+      email: normalizedEmail,
+      roles: [dummyLogins[normalizedEmail].role],
+      permissions: ['*'],
+      isSystemAccount: true,
+      username: normalizedEmail.split('@')[0],
+      userid: 'dummy-' + dummyLogins[normalizedEmail].role
+    };
+  }
+
+  return null;
 };
 
 /**

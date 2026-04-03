@@ -62,12 +62,15 @@ function DashboardApp() {
         if (session?.user) {
           setUser(session.user);
           updateRole(session.user.email);
+        } else if (user && user.id.startsWith('dash-')) {
+          // Keep dashboard user
+          updateRole(user.email);
         } else {
           setUser(null);
         }
       }).catch(err => {
         console.error("Auth session error:", err);
-        setUser(null);
+        if (!user?.id.startsWith('dash-')) setUser(null);
       });
 
       // Listen for changes
@@ -75,7 +78,7 @@ function DashboardApp() {
         if (session?.user) {
           setUser(session.user);
           updateRole(session.user.email);
-        } else {
+        } else if (_event === 'SIGNED_OUT') {
           setUser(null);
         }
       });

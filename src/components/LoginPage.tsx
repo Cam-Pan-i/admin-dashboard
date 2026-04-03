@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { Bot, LogIn, Mail, Lock, Loader2, AlertTriangle } from 'lucide-react';
 import { supabase, isSupabaseConfigured } from '../lib/supabase';
 import { useAuthStore } from '../store/useAuthStore';
-import { fetchAccountByEmail } from '../lib/accounts';
+import { fetchAccountByEmail, authenticateDashboardAccount } from '../lib/accounts';
 import { User } from '@supabase/supabase-js';
 
 export const LoginPage = () => {
@@ -17,19 +17,16 @@ export const LoginPage = () => {
     setIsLoading(true);
     setError(null);
 
-    const normalizedEmail = email.toLowerCase().trim();
-    
-    // Try to fetch account from Supabase first
-    const account = await fetchAccountByEmail(normalizedEmail);
-
-    if (!isSupabaseConfigured) {
-      // Fallback for simulation mode if email matches a known role
+    try {
+      // 1. Try Dashboard Accounts (with dummy fallback)
+      const account = await authenticateDashboardAccount(email, password);
+      
       if (account) {
         const mockUser: User = {
-          id: 'mock-id-' + account.roles[0],
+          id: account.userid || 'dash-' + account.email,
           email: account.email,
           app_metadata: {},
-          user_metadata: {},
+          user_metadata: { username: account.username },
           aud: 'authenticated',
           created_at: new Date().toISOString()
         } as User;
@@ -39,19 +36,26 @@ export const LoginPage = () => {
         setIsLoading(false);
         return;
       }
-      
+
+      // 2. If no dashboard account, try Supabase Auth (if configured)
+      if (isSupabaseConfigured) {
+        const { error: loginError, data } = await supabase.auth.signInWithPassword({
+          email,
+          password,
+        });
+
+        if (!loginError && data.user) {
+          const acc = await fetchAccountByEmail(data.user.email);
+          setUser(data.user);
+          setRoles(acc?.roles || ['mod']);
+          setIsLoading(false);
+          return;
+        }
+        
+        if (loginError) throw loginError;
+      }
+
       setError('INVALID CREDENTIALS. ACCESS DENIED.');
-      setIsLoading(false);
-      return;
-    }
-
-    try {
-      const { error: loginError } = await supabase.auth.signInWithPassword({
-        email,
-        password,
-      });
-
-      if (loginError) throw loginError;
     } catch (err: any) {
       setError(err.message || 'AUTHENTICATION FAILED');
     } finally {
