@@ -13,6 +13,7 @@ import { ServerConfig } from './components/ServerConfig';
 import { GeminiAssistant } from './components/GeminiAssistant';
 import { AccountControl } from './components/AccountControl';
 import { EmbedBuilder } from './components/EmbedBuilder';
+import { AdminConsole } from './components/AdminConsole';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Bot } from 'lucide-react';
@@ -128,6 +129,8 @@ function DashboardApp() {
         return <EmbedBuilder />;
       case 'accounts':
         return <AccountControl />;
+      case 'console':
+        return <AdminConsole />;
       default:
         return (
           <div className="flex flex-col items-center justify-center h-[60vh] space-y-4">

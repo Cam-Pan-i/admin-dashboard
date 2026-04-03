@@ -61,6 +61,125 @@ export async function startServer() {
 
   // --- API Routes ---
 
+  // Console data aggregation
+  app.get("/api/console", async (req, res) => {
+    try {
+      const now = new Date();
+      const tenMinutesAgo = new Date(now.getTime() - 10 * 60 * 1000).toISOString();
+
+      // 1. Service Health Checks
+      const pingSupabase = async () => {
+        const start = Date.now();
+        try {
+          const { data, error } = await supabase.from("pulse_heartbeat").select("id").limit(1);
+          return { status: error ? "error" : "ok", latency_ms: Date.now() - start };
+        } catch {
+          return { status: "error", latency_ms: -1 };
+        }
+      };
+
+      const pingNowPayments = async () => {
+        const start = Date.now();
+        const apiKey = process.env.NOWPAYMENTS_API_KEY;
+        if (!apiKey) return { status: "error", message: "API Key missing", latency_ms: -1 };
+        try {
+          const response = await fetch("https://api.nowpayments.io/v1/status", {
+            headers: { "x-api-key": apiKey }
+          });
+          const data = await response.json();
+          return { status: response.ok ? "ok" : "error", message: data.message || "Connected", latency_ms: Date.now() - start };
+        } catch (e: any) {
+          return { status: "error", message: e.message, latency_ms: -1 };
+        }
+      };
+
+      const getBotStatus = async () => {
+        try {
+          const { data, error } = await supabase
+            .from("pulse_heartbeat")
+            .select("last_pulse, latency_ms")
+            .eq("id", "00000000-0000-0000-0000-000000000001")
+            .single();
+
+          if (error || !data) return { status: "offline", seconds_ago: null };
+
+          const lastPulse = new Date(data.last_pulse);
+          const secondsAgo = Math.floor((now.getTime() - lastPulse.getTime()) / 1000);
+          const isOnline = Math.abs(secondsAgo) < 60;
+
+          return {
+            status: isOnline ? "online" : "offline",
+            latency_ms: data.latency_ms,
+            seconds_ago: Math.abs(secondsAgo),
+            last_pulse: data.last_pulse
+          };
+        } catch {
+          return { status: "offline", seconds_ago: null };
+        }
+      };
+
+      // 2. Data Aggregation
+      const [
+        sbHealth,
+        npHealth,
+        botStatus,
+        { data: orders },
+        { data: signals },
+        { data: audits },
+        { data: consoleLogs },
+        { data: vlogs }
+      ] = await Promise.all([
+        pingSupabase(),
+        pingNowPayments(),
+        getBotStatus(),
+        supabase.from("shop_orders").select("*").order("created_at", { ascending: false }).limit(15),
+        supabase.from("bot_control").select("*").order("created_at", { ascending: false }).limit(15),
+        supabase.from("audit_logs").select("*").order("created_at", { ascending: false }).limit(10),
+        supabase.from("analytics").select("*").eq("event_type", "console_command").eq("guild_id", GUILD_ID).order("timestamp", { ascending: false }).limit(10),
+        supabase.from("visitor_logs").select("visitor_id, visited_at").order("visited_at", { ascending: false }).limit(20)
+      ]);
+
+      // 3. Active Admins
+      const activeVids = [...new Set((vlogs || [])
+        .filter(v => {
+          const vt = new Date(v.visited_at);
+          return (now.getTime() - vt.getTime()) < 600000; // 10 minutes
+        })
+        .map(v => v.visitor_id))];
+
+      let activeAdmins = [];
+      if (activeVids.length > 0) {
+        const { data: admins } = await supabase
+          .from("dashboard_accounts")
+          .select("email, username, perms")
+          .in("email", activeVids); // Assuming visitor_id is email for dashboard users
+        activeAdmins = admins || [];
+      }
+
+      res.json({
+        timestamp: now.toISOString(),
+        env: {
+          SUPABASE_URL: SUPABASE_URL ? "✓ set" : "✗ MISSING",
+          SUPABASE_KEY: SUPABASE_KEY ? "✓ set" : "✗ MISSING",
+          NOWPAYMENTS_API_KEY: process.env.NOWPAYMENTS_API_KEY ? "✓ set" : "✗ MISSING",
+          MAIN_GUILD: GUILD_ID ? "✓ set" : "✗ MISSING",
+        },
+        services: {
+          nowpayments: npHealth,
+          supabase: sbHealth,
+          bot: botStatus,
+        },
+        recent_orders: orders || [],
+        recent_signals: signals || [],
+        recent_audits: audits || [],
+        recent_console: consoleLogs || [],
+        active_admins: activeAdmins,
+      });
+    } catch (error: any) {
+      res.status(500).json({ error: error.message });
+    }
+  });
+
   // Health check
   app.get("/api/health", (req, res) => {
     res.json({ status: "ok" });

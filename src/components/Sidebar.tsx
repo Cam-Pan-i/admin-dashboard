@@ -16,6 +16,7 @@ import {
   Bot,
   Sparkles,
   Layout,
+  Terminal,
   X
 } from 'lucide-react';
 import { useAppStore } from '../store/useAppStore';
@@ -35,6 +36,7 @@ const navItems = [
   { id: 'ai', label: 'AI Assistant', icon: Sparkles },
   { id: 'embeds', label: 'Embed Builder', icon: Layout },
   { id: 'accounts', label: 'Account Control', icon: ShieldCheck },
+  { id: 'console', label: 'Admin Console', icon: Terminal, roles: ['owner', 'admin'] },
   { id: 'config', label: 'Server Config', icon: Settings },
 ];
 
@@ -43,6 +45,12 @@ export const Sidebar = ({ activeTab, setActiveTab }: { activeTab: string, setAct
   const { user, roles } = useAuthStore();
   const [serverName, setServerName] = useState('BOB');
   const [loading, setLoading] = useState(true);
+
+  const filteredNavItems = navItems.filter(item => {
+    if (!item.roles) return true;
+    if (!roles) return false;
+    return item.roles.some(role => roles.includes(role as any));
+  });
 
   useEffect(() => {
     const fetchSettings = async () => {
@@ -109,7 +117,7 @@ export const Sidebar = ({ activeTab, setActiveTab }: { activeTab: string, setAct
         </div>
 
         <div className="flex-1 px-3 py-6 space-y-1 overflow-y-auto custom-scrollbar pointer-events-auto">
-          {navItems.map((item) => (
+          {filteredNavItems.map((item) => (
             <button
               key={item.id}
               onClick={() => handleTabClick(item.id)}
