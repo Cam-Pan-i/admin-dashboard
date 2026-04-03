@@ -21,9 +21,30 @@ export const CallbackPage: React.FC = () => {
     if (code) {
       setHeading('VALIDATING');
       setStatus('Finalizing secure connection to the central registry...');
-      setTimeout(() => {
-        window.location.href = '/api/callback?code=' + encodeURIComponent(code);
-      }, 1600);
+      
+      const validate = async () => {
+        try {
+          const redirectUri = window.location.origin + '/callback';
+          const response = await fetch(`/api/callback?code=${encodeURIComponent(code)}&redirect_uri=${encodeURIComponent(redirectUri)}`);
+          const data = await response.json();
+          
+          if (data.status === 'success') {
+            setHeading('SUCCESS');
+            setStatus('Identity verified. Redirecting to terminal...');
+            setTimeout(() => {
+              window.location.href = '/';
+            }, 2000);
+          } else {
+            throw new Error(data.message || 'Verification failed');
+          }
+        } catch (err: any) {
+          setHeading('ERROR');
+          setStatus(err.message || 'A protocol error occurred during synchronization.');
+          setIsError(true);
+        }
+      };
+      
+      validate();
       return;
     }
 

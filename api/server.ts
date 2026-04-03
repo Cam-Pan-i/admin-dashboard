@@ -66,98 +66,6 @@ export async function startServer() {
     res.json({ status: "ok" });
   });
 
-  // Callback API (Logic from callback.py)
-  app.get("/api/callback", async (req, res) => {
-    const { code, access_token: queryToken } = req.query;
-
-    try {
-      let accessToken = queryToken as string;
-
-      if (code) {
-        // Exchange code for tokens
-        const tokenResponse = await fetch("https://discord.com/api/v10/oauth2/token", {
-          method: "POST",
-          body: new URLSearchParams({
-            client_id: CLIENT_ID,
-            client_secret: CLIENT_SECRET!,
-            grant_type: "authorization_code",
-            code: code as string,
-            redirect_uri: REDIRECT_URI,
-          }),
-          headers: {
-            "Content-Type": "application/x-www-form-urlencoded",
-          },
-        });
-
-        const tokenData = await tokenResponse.json();
-        if (!tokenData.access_token) {
-          throw new Error("Failed to exchange code for token: " + JSON.stringify(tokenData));
-        }
-        accessToken = tokenData.access_token;
-      }
-
-      if (!accessToken) {
-        return res.status(400).send("No access token or code provided");
-      }
-
-      // Get user profile
-      const userResponse = await fetch("https://discord.com/api/v10/users/@me", {
-        headers: {
-          Authorization: `Bearer ${accessToken}`,
-        },
-      });
-
-      const userData = await userResponse.json();
-      if (!userData.id) {
-        throw new Error("Failed to fetch user data: " + JSON.stringify(userData));
-      }
-
-      // Save to Supabase (authorized_users table)
-      const { error: supabaseError } = await supabase
-        .from("authorized_users")
-        .upsert({
-          user_id: userData.id,
-          username: userData.username,
-          email: userData.email,
-          access_token: accessToken,
-          last_login: new Date().toISOString(),
-        });
-
-      if (supabaseError) {
-        throw new Error("Supabase error: " + supabaseError.message);
-      }
-
-      // Success response (HTML)
-      res.send(`
-        <!DOCTYPE html>
-        <html>
-        <head>
-          <title>Success — Bob's Market</title>
-          <style>
-            body { background: #0a0a0c; color: #fff; font-family: sans-serif; display: flex; align-items: center; justify-content: center; height: 100vh; margin: 0; }
-            .card { background: rgba(20, 20, 24, 0.8); border: 1px solid rgba(255, 255, 255, 0.08); padding: 40px; border-radius: 20px; text-align: center; }
-            h1 { color: #22c55e; }
-          </style>
-        </head>
-        <body>
-          <div class="card">
-            <h1>Verification Successful</h1>
-            <p>Welcome, ${userData.username}. Your identity has been verified.</p>
-            <p>You can now close this window or return to the server.</p>
-            <script>
-              setTimeout(() => { window.location.href = '/main'; }, 3000);
-            </script>
-          </div>
-        </body>
-        </html>
-      `);
-
-    } catch (error) {
-      console.error("Callback error:", error);
-      res.status(500).send("Internal Server Error during verification: " + (error as Error).message);
-    }
-  });
-
   app.get("/api/discord/guild", async (req, res) => {
     const token = BOT_TOKEN;
     const guildId = GUILD_ID;
@@ -197,6 +105,40 @@ export async function startServer() {
     } catch (error) {
       console.error("Error fetching Discord data:", error);
       res.status(500).json({ error: "Failed to fetch Discord data" });
+    }
+  });
+
+  app.get("/api/discord/channels", async (req, res) => {
+    const token = BOT_TOKEN;
+    const guildId = GUILD_ID;
+
+    if (!token || !guildId) {
+      return res.status(500).json({ error: "Discord credentials missing." });
+    }
+
+    try {
+      const response = await fetch(`https://discord.com/api/v10/guilds/${guildId}/channels`, {
+        headers: { Authorization: `Bot ${token}` },
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        return res.status(response.status).json({ error: "Discord API error", details: errorData });
+      }
+
+      const data = await response.json();
+      const channels = data
+        .filter((c: any) => c.type === 0 || c.type === 5)
+        .map((c: any) => ({
+          id: c.id,
+          name: c.name,
+          type: c.type
+        }));
+
+      res.json(channels);
+    } catch (error) {
+      console.error("Error fetching Discord channels:", error);
+      res.status(500).json({ error: "Failed to fetch Discord channels" });
     }
   });
 

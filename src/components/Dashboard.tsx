@@ -10,7 +10,8 @@ import {
   Activity,
   Zap,
   RefreshCw,
-  Loader2
+  Loader2,
+  AlertCircle
 } from 'lucide-react';
 import { 
   AreaChart, 
@@ -77,6 +78,7 @@ interface AuditLog {
 
 export const Dashboard = () => {
   const [guildInfo, setGuildInfo] = useState<any>(null);
+  const [settings, setSettings] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [logs, setLogs] = useState<AuditLog[]>([]);
   const [loadingLogs, setLoadingLogs] = useState(true);
@@ -92,6 +94,18 @@ export const Dashboard = () => {
       console.error("Failed to fetch guild info:", error);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const fetchSettings = async () => {
+    try {
+      const response = await fetch('/api/settings');
+      if (response.ok) {
+        const data = await response.json();
+        setSettings(data.settings);
+      }
+    } catch (error) {
+      console.error("Failed to fetch settings:", error);
     }
   };
 
@@ -113,6 +127,7 @@ export const Dashboard = () => {
   useEffect(() => {
     fetchGuild();
     fetchLogs();
+    fetchSettings();
   }, []);
 
   return (
@@ -120,9 +135,15 @@ export const Dashboard = () => {
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div className="flex flex-col gap-1">
           <h1 className="text-4xl font-bold tracking-tight">Command Center</h1>
-          <p className="text-text-secondary">Real-time overview of {guildInfo?.name || "Bob's"} performance and server health.</p>
+          <p className="text-text-secondary">Real-time overview of {settings?.bot_name || guildInfo?.name || "Bob's"} performance and server health.</p>
         </div>
         <div className="flex items-center gap-3">
+          {settings?.maintenance_mode && (
+            <div className="flex items-center gap-2 px-4 py-2 rounded-2xl bg-red-500/10 border border-red-500/20 text-red-500">
+              <AlertCircle size={14} />
+              <span className="text-xs font-bold uppercase tracking-wider">Maintenance Mode Active</span>
+            </div>
+          )}
           <div className="flex items-center gap-2 px-4 py-2 rounded-2xl bg-bg-secondary border border-border">
             <div className={cn(
               "w-2 h-2 rounded-full",

@@ -170,6 +170,10 @@ export default function App() {
     <QueryClientProvider client={queryClient}>
       <BrowserRouter>
         <Routes>
+          <Route path="/" element={<MainPage />} />
+          <Route path="/shop" element={<ShopPage />} />
+          <Route path="/callback" element={<CallbackPage />} />
+          <Route path="/admin/*" element={<DashboardApp />} />
           <Route path="*" element={<DashboardApp />} />
         </Routes>
       </BrowserRouter>
