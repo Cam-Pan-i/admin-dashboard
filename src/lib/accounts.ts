@@ -89,6 +89,29 @@ export const fetchAccountByEmail = async (email: string | undefined | null): Pro
   
   const normalizedEmail = email.toLowerCase().trim();
   
+  // 1. Try dashboard_accounts first (for dashboard-only users)
+  try {
+    const { data: dashData, error: dashError } = await supabase
+      .from('dashboard_accounts')
+      .select('*')
+      .eq('email', normalizedEmail)
+      .single();
+      
+    if (dashData && !dashError) {
+      return {
+        email: dashData.email,
+        roles: dashData.perms ? [dashData.perms as UserRole] : ['mod'],
+        permissions: ['*'],
+        isSystemAccount: true,
+        username: dashData.username,
+        userid: dashData.userid
+      };
+    }
+  } catch (err) {
+    // Table might not exist
+  }
+
+  // 2. Try authorized_users (for Discord users)
   const data = await safeFetch(
     supabase
       .from('authorized_users')

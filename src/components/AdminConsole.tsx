@@ -243,15 +243,16 @@ export const AdminConsole = () => {
     }
   };
 
-  const purgeRegistry = async () => {
-    if (!confirm('EXTREME CAUTION: This will delete all historical shop orders. Proceed?')) return;
+  const triggerSignal = async (signal: string) => {
+    const label = signal.replace('_signal', '').toUpperCase();
+    if (!confirm(`EXTREME CAUTION: This will trigger a ${label} signal. Proceed?`)) return;
     try {
-      addLog('warn', 'Sending PURGE REGISTRY signal...');
-      const { error } = await supabase.from('bot_settings').update({ purge_shop_signal: true }).eq('id', 'global');
+      addLog('warn', `Sending ${label} signal...`);
+      const { error } = await supabase.from('bot_settings').update({ [signal]: true }).eq('id', 'global');
       if (error) throw error;
-      addLog('ok', 'Purge signal acknowledged');
+      addLog('ok', `${label} signal acknowledged`);
     } catch (err: any) {
-      addLog('error', `Purge failed: ${err.message}`);
+      addLog('error', `${label} failed: ${err.message}`);
     }
   };
 
@@ -481,12 +482,26 @@ export const AdminConsole = () => {
             </div>
           </div>
 
-          <div className="p-4 border-t border-white/5">
+          <div className="p-4 border-t border-white/5 space-y-2">
+            <div className="grid grid-cols-2 gap-2">
+              <button 
+                onClick={() => triggerSignal('restart_signal')}
+                className="py-2 bg-blue-400/5 hover:bg-blue-400/10 border border-blue-400/20 text-blue-400 text-[9px] font-black uppercase tracking-widest rounded transition-all flex items-center justify-center gap-2"
+              >
+                <RefreshCw size={10} /> RESTART
+              </button>
+              <button 
+                onClick={() => triggerSignal('stop_signal')}
+                className="py-2 bg-red-400/5 hover:bg-red-400/10 border border-red-400/20 text-red-400 text-[9px] font-black uppercase tracking-widest rounded transition-all flex items-center justify-center gap-2"
+              >
+                <Pause size={10} /> STOP
+              </button>
+            </div>
             <button 
-              onClick={purgeRegistry}
-              className="w-full py-2 bg-red-400/5 hover:bg-red-400/10 border border-red-400/20 text-red-400 text-[9px] font-black uppercase tracking-widest rounded transition-all"
+              onClick={() => triggerSignal('purge_shop_signal')}
+              className="w-full py-2 bg-orange-400/5 hover:bg-orange-400/10 border border-orange-400/20 text-orange-400 text-[9px] font-black uppercase tracking-widest rounded transition-all flex items-center justify-center gap-2"
             >
-              PURGE REGISTRY
+              <Trash2 size={10} /> PURGE REGISTRY
             </button>
           </div>
         </div>

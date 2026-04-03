@@ -32,30 +32,33 @@ export const AnalyticsLab = () => {
   const [modActions, setModActions] = useState<any[]>([]);
   const [activityPulse, setActivityPulse] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
+  const [range, setRange] = useState<'7D' | '30D'>('30D');
   const [stats, setStats] = useState({ totalEvents: 0, retention: '82%', virality: '1.4x', growthPercent: '+0%' });
 
   useEffect(() => {
     const fetchAnalytics = async () => {
       setLoading(true);
       try {
+        const limit = range === '30D' ? 30 : 7;
         const [growthData, auditData, heartbeatData] = await Promise.all([
-          safeFetch(supabase.from('member_stats').select('date, count').order('date', { ascending: true }).limit(30), [], 'Fetch member growth'),
+          safeFetch(supabase.from('member_stats').select('date, count').order('date', { ascending: false }).limit(limit), [], 'Fetch member growth'),
           safeFetch(supabase.from('audit_log').select('action'), [], 'Fetch audit logs for distribution'),
-          safeFetch(supabase.from('pulse_heartbeat').select('timestamp, latency').order('timestamp', { ascending: true }).limit(24), [], 'Fetch activity pulse')
+          safeFetch(supabase.from('pulse_heartbeat').select('timestamp, latency').order('timestamp', { ascending: false }).limit(24), [], 'Fetch activity pulse')
         ]);
 
-        // Process growth data
-        setMemberGrowth(growthData);
-        if (growthData.length >= 2) {
-          const first = growthData[0].count;
-          const last = growthData[growthData.length - 1].count;
-          const diff = ((last - first) / first * 100).toFixed(1);
+        // Process growth data - reverse to show chronological order
+        const processedGrowth = [...growthData].reverse();
+        setMemberGrowth(processedGrowth);
+        if (processedGrowth.length >= 2) {
+          const first = processedGrowth[0].count;
+          const last = processedGrowth[processedGrowth.length - 1].count;
+          const diff = first !== 0 ? ((last - first) / first * 100).toFixed(1) : '0';
           setStats(prev => ({ ...prev, growthPercent: `+${diff}%` }));
         }
 
         // Process mod actions
         const actions = auditData.reduce((acc: any, curr: any) => {
-          const action = curr.action.toLowerCase();
+          const action = (curr.action || '').toLowerCase();
           if (action.includes('ban')) acc.bans++;
           else if (action.includes('warn')) acc.warns++;
           else if (action.includes('mute')) acc.mutes++;
@@ -72,10 +75,11 @@ export const AnalyticsLab = () => {
         setStats(prev => ({ ...prev, totalEvents: auditData.length }));
 
         // Process activity pulse (using latency as a proxy for activity/load)
-        setActivityPulse(heartbeatData.map((h: any) => ({
+        const processedPulse = [...heartbeatData].reverse().map((h: any) => ({
           hour: new Date(h.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
           value: h.latency
-        })));
+        }));
+        setActivityPulse(processedPulse);
 
       } catch (err) {
         console.error('Error fetching analytics:', err);
@@ -85,7 +89,7 @@ export const AnalyticsLab = () => {
     };
 
     fetchAnalytics();
-  }, []);
+  }, [range]);
 
   if (loading) {
     return (
@@ -103,9 +107,12 @@ export const AnalyticsLab = () => {
           <p className="text-text-secondary text-xs font-mono tracking-widest uppercase opacity-60">Intelligence Gathering & Behavioral Analysis Matrix</p>
         </div>
         <div className="flex items-center gap-3">
-          <button className="flex items-center gap-2 px-4 py-2 rounded-lg glass border border-white/10 text-[9px] uppercase tracking-[0.2em] font-bold hover:bg-white/10 transition-all neo-border">
+          <button 
+            onClick={() => setRange(range === '30D' ? '7D' : '30D')}
+            className="flex items-center gap-2 px-4 py-2 rounded-lg glass border border-white/10 text-[9px] uppercase tracking-[0.2em] font-bold hover:bg-white/10 transition-all neo-border"
+          >
             <Calendar size={14} />
-            Temporal Range: 30D
+            Temporal Range: {range}
           </button>
           <button className="flex items-center gap-2 px-4 py-2 rounded-lg bg-white text-black font-bold text-[9px] uppercase tracking-[0.2em] hover:bg-white/90 transition-all shadow-[0_0_20px_rgba(255,255,255,0.1)]">
             <Download size={14} />
